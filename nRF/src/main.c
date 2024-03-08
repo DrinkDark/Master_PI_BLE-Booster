@@ -5,8 +5,11 @@
  */
 
 #include <zephyr/kernel.h>
-#include "task/led.h"
+
 #include "define.h"
+#include "task/led.h"
+#include "task/button_manager.h"
+
 
 
 int main(void)
@@ -16,7 +19,8 @@ int main(void)
 	#endif
 
 	led_thread_init();
-		
+	button_manager_init();
+
 	k_sleep( K_FOREVER );
 	return 0;
 }
