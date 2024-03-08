@@ -5,9 +5,19 @@
  */
 
 #include <zephyr/kernel.h>
+#include "task/led.h"
+#include "define.h"
+
 
 int main(void)
 {
-	printf("Hello World! %s\n", CONFIG_BOARD);
+	#ifdef DEBUG_MODE
+	 	printk("Programm started!\n");
+	#endif
+
+	led_thread_init();
+		
+	k_sleep( K_FOREVER );
 	return 0;
 }
+
