@@ -69,7 +69,7 @@ void led_thread_init( void )
 					0,
 					K_NO_WAIT);	
 
-	 k_thread_name_set(&ledThread, "ledBlinking");
+	 k_thread_name_set(&ledThread, "ledThread");
 	 k_thread_start(&ledThread);
 
 	 #ifdef DEBUG_MODE
