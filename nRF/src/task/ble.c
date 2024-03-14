@@ -8,12 +8,11 @@
 #include "ble.h"
 #include "../define.h"
 
-#define BLE_STACK_SIZE 1024
-#define BLE_PRIORITY 4
+#define BLE_STACK_SIZE 2048
+#define BLE_PRIORITY 6
 
 K_THREAD_STACK_DEFINE(BLE_STACK, BLE_STACK_SIZE);
 static struct k_thread bleThread;
-
 
 void ble_thread_init(){
     k_thread_create	(&bleThread,
@@ -36,24 +35,66 @@ void ble_thread_init(){
 }
 
 void ble_controller(){
-    while(true) {
-        printk("Hello world\n");
-        k_sleep(K_MSEC(1000));
+    int err;
+
+	err = bt_enable(NULL);
+	if (err) {
+        #ifdef DEBUG_MODE
+		    printk("Bluetooth init failed (err %d)\n", err);
+        #endif
+		return;
+	}
+
+	
+    #ifdef DEBUG_MODE
+        printk("Bluetooth initialized\n");
+    #endif
+
+    ble_start_scan();
+    while (true)
+    {
+        
     }
-
-
 }
 
 void ble_start_scan(){
+    int err;
 
+	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, ble_device_found);
+	if (err) {
+        #ifdef DEBUG_MODE
+            printk("ble_start_scan failed (err %d)\n", err);
+        #endif
+		return;
+	}
+        #ifdef DEBUG_MODE
+            printk("ble_start_scan");
+        #endif
 }
 
 void ble_stop_scan(){
+    int err;
 
+    err = bt_le_scan_stop();
+    if (err) {
+        #ifdef DEBUG_MODE
+            printk("ble_stop_scan failed (err %d)\n", err);
+        #endif
+        return;
+    }
+    #ifdef DEBUG_MODE
+        printk("ble_stop_scan");
+    #endif
 }
 
 void ble_device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type, struct net_buf_simple *ad){
+    char addr_str[BT_ADDR_LE_STR_LEN];
+    bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
 
+    #ifdef DEBUG_MODE
+        
+        printk("Device found: %s (RSSI %d)\n", addr_str, rssi);
+    #endif
 }
 
 void ble_connect(void){
