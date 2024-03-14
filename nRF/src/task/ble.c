@@ -45,7 +45,6 @@ void ble_controller(){
 		return;
 	}
 
-	
     #ifdef DEBUG_MODE
         printk("Bluetooth initialized\n");
     #endif
@@ -57,7 +56,7 @@ void ble_controller(){
     }
 }
 
-void ble_start_scan(){
+int ble_start_scan(){
     int err;
 
 	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, ble_device_found);
@@ -65,14 +64,15 @@ void ble_start_scan(){
         #ifdef DEBUG_MODE
             printk("ble_start_scan failed (err %d)\n", err);
         #endif
-		return;
+		return err;
 	}
-        #ifdef DEBUG_MODE
-            printk("ble_start_scan");
-        #endif
+    #ifdef DEBUG_MODE
+        //printk("ble_start_scan");
+    #endif
+    return 0;
 }
 
-void ble_stop_scan(){
+int ble_stop_scan(){
     int err;
 
     err = bt_le_scan_stop();
@@ -80,21 +80,45 @@ void ble_stop_scan(){
         #ifdef DEBUG_MODE
             printk("ble_stop_scan failed (err %d)\n", err);
         #endif
-        return;
+        return err;
     }
     #ifdef DEBUG_MODE
-        printk("ble_stop_scan");
+        //printk("ble_stop_scan");
     #endif
+
+    return 0;
 }
 
 void ble_device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type, struct net_buf_simple *ad){
     char addr_str[BT_ADDR_LE_STR_LEN];
-    bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
+    char manufacturer_data[30];
+    char name[30];
+    struct net_buf_simple *data = ad;
 
-    #ifdef DEBUG_MODE
-        
-        printk("Device found: %s (RSSI %d)\n", addr_str, rssi);
-    #endif
+    bt_data_parse(data, name_data_cb, name);
+
+    //bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
+    if((strstr(name, "Speak No Evil")) )!= NULL){
+        #ifdef DEBUG_MODE
+            printk("Device found: %s (RSSI %d)\n", name, rssi);
+        #endif
+    }
+}
+
+
+bool name_data_cb(struct bt_data *data, void *user_data)
+{
+	char *name = user_data;
+
+	switch (data->type) {
+	case BT_DATA_NAME_SHORTENED:
+	case BT_DATA_NAME_COMPLETE:
+		memcpy(name, data->data, MIN(data->data_len, 30 - 1));
+        name[MIN(data->data_len, 30 - 1)] = '\0';
+		return false;
+	default:
+		return true;
+	}
 }
 
 void ble_connect(void){
