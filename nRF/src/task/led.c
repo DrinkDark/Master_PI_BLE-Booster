@@ -28,7 +28,7 @@ static const struct gpio_dt_spec led4 = GPIO_DT_SPEC_GET(LED3_NODE, gpios);
 void led_controller(void)
 {	
 	#ifdef DEBUG_MODE
-	 	printf("led_controller\n");
+	 	printk("led_controller\n");
 	#endif
 
 	if (!device_is_ready(led1.port)) {return;}
@@ -73,6 +73,6 @@ void led_thread_init( void )
 	 k_thread_start(&ledThread);
 
 	 #ifdef DEBUG_MODE
-	 	printf("led_thread_init\n");
+	 	printk("led_thread_init\n");
 	 #endif
 }

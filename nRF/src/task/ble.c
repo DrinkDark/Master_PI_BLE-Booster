@@ -5,7 +5,44 @@
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/sys/byteorder.h>
 
-void ble_init(){}
+#include "ble.h"
+#include "../define.h"
+
+#define BLE_STACK_SIZE 1024
+#define BLE_PRIORITY 4
+
+K_THREAD_STACK_DEFINE(BLE_STACK, BLE_STACK_SIZE);
+static struct k_thread bleThread;
+
+
+void ble_thread_init(){
+    k_thread_create	(&bleThread,
+                BLE_STACK,										        
+                BLE_STACK_SIZE,
+                (k_thread_entry_t)ble_controller,
+                NULL,
+                NULL,
+                NULL,
+                BLE_PRIORITY,
+                0,
+                K_NO_WAIT);	
+
+    k_thread_name_set(&bleThread, "bleThread");
+    k_thread_start(&bleThread);
+
+    #ifdef DEBUG_MODE
+    printk("ble_thread_init\n");
+    #endif
+}
+
+void ble_controller(){
+    while(true) {
+        printk("Hello world\n");
+        k_sleep(K_MSEC(1000));
+    }
+
+
+}
 
 void ble_start_scan(){
 
