@@ -14,6 +14,7 @@
 K_THREAD_STACK_DEFINE(BLE_STACK, BLE_STACK_SIZE);
 static struct k_thread bleThread;
 
+
 void ble_thread_init(){
     k_thread_create	(&bleThread,
                 BLE_STACK,										        
@@ -98,7 +99,7 @@ void ble_device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type, struc
     bt_data_parse(data, name_data_cb, name);
 
     //bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
-    if((strstr(name, "Speak No Evil")) )!= NULL){
+    if((strstr(name, "Speak No Evil") || strstr(name, "A51 de Adrien"))!= NULL){
         #ifdef DEBUG_MODE
             printk("Device found: %s (RSSI %d)\n", name, rssi);
         #endif
