@@ -30,8 +30,12 @@ struct Monkey {
 
 // Function prototypes
 void initMonkeyList();
-void appendOrModifyMonkey(struct Monkey** head_ref, int num, int rssi, int record_time, enum main_state state);
-void removeMonkey(struct Monkey** head_ref, int num);
-void printMonkeys(struct Monkey* monkeyList);
+void appendOrModifyMonkey(int num, int rssi, int record_time, enum main_state state);
+void removeMonkey(int num);
+void printMonkeys();
+void getAllMonkeys(struct Monkey* monkeysArray);
+bool getMonkeyAtIndex(struct Monkey* monkey, int index);
+bool getThreeMonkeys(struct Monkey* monkeys, int startIndex);
+int getNumMonkeys();
 
 #endif /* MONKEYLIST_H */

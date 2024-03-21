@@ -31,8 +31,7 @@ static struct k_thread th2;
 K_THREAD_STACK_DEFINE(STACK1, STACK_SIZE);
 K_THREAD_STACK_DEFINE(STACK2, STACK_SIZE);
 
-// Global variable to hold the head of the monkey list
-struct Monkey* monkeyList = NULL;
+
 
 void main(void)
 {
@@ -67,11 +66,11 @@ void thread1(void *p1, void *p2, void *p3)
         enum main_state state =  ST_INIT + (sys_rand32_get() % 3);
 
         // Append or modify Monkey
-        appendOrModifyMonkey(&monkeyList, num, rssi, record_time, state);
+        appendOrModifyMonkey(num, rssi, record_time, state);
 
         // Print the Monkey list
         printk("Thread1 Monkey List:\n");
-        printMonkeys(monkeyList);
+        printMonkeys();
 
         k_sleep(K_MSEC(2000));
     }
@@ -91,11 +90,21 @@ void thread2(void *p1, void *p2, void *p3)
         int num = sys_rand32_get() % 5 + 1;
 
         // Remove Monkey
-        removeMonkey(&monkeyList, num);
+        removeMonkey(num);
 
         // Print the Monkey list
         printk("Thread2 Monkey List:\n");
-        printMonkeys(monkeyList);
+        printMonkeys();
+
+        //get all monkeys example
+        int tot = getNumMonkeys();
+        struct Monkey array[tot];
+        getAllMonkeys(array);
+
+        for(int i = 0; i<= tot;i++)
+        {
+                printk("%d, ",array[i].num);
+        }
 
         k_sleep(K_MSEC(3000));
     }
