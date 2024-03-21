@@ -324,18 +324,28 @@ void display_select_open()
         nextion_command("btn_open.pic=5");
         nextion_command("btn_reset.pic=8");
         nextion_command("btn_toggle.pic=10");
+        nextion_command("btn_exit.pic=14");
 }
 void display_select_reset()
 {
         nextion_command("btn_open.pic=6");
         nextion_command("btn_reset.pic=7");
         nextion_command("btn_toggle.pic=10");
+        nextion_command("btn_exit.pic=14");
 }
 void display_select_toggle()
 {
         nextion_command("btn_open.pic=6");
         nextion_command("btn_reset.pic=8");
         nextion_command("btn_toggle.pic=9");
+        nextion_command("btn_exit.pic=14");
+}
+void display_select_exit()
+{
+        nextion_command("btn_open.pic=6");
+        nextion_command("btn_reset.pic=8");
+        nextion_command("btn_toggle.pic=10");
+        nextion_command("btn_exit.pic=13");
 }
 void display_show_popup()
 {

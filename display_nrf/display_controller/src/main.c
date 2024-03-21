@@ -34,6 +34,18 @@ int main(void)
 
         display_show_popup();
 
+        k_msleep(2000);
+
+        display_hide_popup();
+
+        k_msleep(2000);
+
+        display_select_exit();
+
+        k_msleep(2000);
+
+        display_main_page();
+
 
         return 0;
 }

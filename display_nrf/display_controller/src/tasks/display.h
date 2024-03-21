@@ -31,6 +31,7 @@ void display_device_page(int deviceNbr, int rssi, int nbrDays, enum main_state s
 void display_select_open();
 void display_select_reset();
 void display_select_toggle();
+void display_select_exit();
 void display_show_popup();
 void display_hide_popup();
 
