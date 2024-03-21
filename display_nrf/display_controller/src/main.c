@@ -11,11 +11,29 @@ LOG_MODULE_REGISTER(main);
 
 int main(void)
 {
-        nextion_command("page 1");
+        display_main_page();
 
         display_device_1(100,-4,0,ST_LOW_BATT,false);
-        display_device_2(56,-23,6,ST_ERROR,true);    
-        display_device_3(123,-54,3,ST_DISK_FULL,false);
+        display_device_2(56,-23,6,ST_ERROR,false);    
+        display_device_3(123,-54,3,ST_DISK_FULL,true);
+        display_more_devices();
+
+        k_msleep(2000);
         
+        display_loading_page(123);
+
+        k_msleep(2000);
+
+        display_device_page(123,-54,3,ST_DISK_FULL);
+
+        k_msleep(2000);
+
+        display_select_reset();
+
+        k_msleep(2000);
+
+        display_show_popup();
+
+
         return 0;
 }

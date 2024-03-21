@@ -10,7 +10,6 @@ static const struct device *const uart_dev = DEVICE_DT_GET(UART_DEVICE_NODE);
 
 
 
-
 void nextion_command(char *buf)
 {
 	int msg_len = strlen(buf);
@@ -21,6 +20,11 @@ void nextion_command(char *buf)
         uart_poll_out(uart_dev,0xFF);
         uart_poll_out(uart_dev,0xFF);
         uart_poll_out(uart_dev,0xFF);
+}
+
+void display_main_page()
+{
+        nextion_command("page 1");
 }
 
 void display_device_1(int deviceNbr, int rssi, int nbrDays, enum main_state state, bool selected)
@@ -269,4 +273,75 @@ void hide_device_3()
 void hide_more_devices()
 {
         nextion_command("vis more,0");
+}
+
+void display_loading_page(int deviceNbr)
+{
+        nextion_command("page 3");
+
+        char buf[50];
+
+        sprintf(buf,"lbl_title.txt=\"Device %d\"",deviceNbr);
+        nextion_command(buf);
+}
+
+void display_device_page(int deviceNbr, int rssi, int nbrDays, enum main_state state)
+{
+        nextion_command("page 2");
+
+        char buf[50];
+
+        sprintf(buf,"lbl_title.txt=\"Device %d\"",deviceNbr);
+        nextion_command(buf);
+
+        sprintf(buf,"lbl_rssi_val.txt=\"%d\"",rssi);
+        nextion_command(buf);
+
+        sprintf(buf,"lbl_DR_val.txt=\"%d\"",nbrDays);
+        nextion_command(buf);
+
+        if(state==ST_INIT)
+                nextion_command("lbl_DS_val.txt=\"Initialization\"");
+        else if(state==ST_WAIT_SD_CARD)
+                nextion_command("lbl_DS_val.txt=\"No SD Card\"");
+        else if(state==ST_IDLE)
+                nextion_command("lbl_DS_val.txt=\"Idle\"");
+        else if(state==ST_RECORDING)
+                nextion_command("lbl_DS_val.txt=\"Recording\"");
+        else if(state==ST_DISK_FULL)
+                nextion_command("lbl_DS_val.txt=\"Disk Full\"");
+        else if(state==ST_LOW_BATT)
+                nextion_command("lbl_DS_val.txt=\"Low Battery\"");
+        else if(state==ST_POWER_SAVING)
+                nextion_command("lbl_DS_val.txt=\"Power Saving\"");
+        else if(state==ST_ERROR)
+                nextion_command("lbl_DS_val.txt=\"Error\"");
+}
+
+
+void display_select_open()
+{
+        nextion_command("btn_open.pic=5");
+        nextion_command("btn_reset.pic=8");
+        nextion_command("btn_toggle.pic=10");
+}
+void display_select_reset()
+{
+        nextion_command("btn_open.pic=6");
+        nextion_command("btn_reset.pic=7");
+        nextion_command("btn_toggle.pic=10");
+}
+void display_select_toggle()
+{
+        nextion_command("btn_open.pic=6");
+        nextion_command("btn_reset.pic=8");
+        nextion_command("btn_toggle.pic=9");
+}
+void display_show_popup()
+{
+        nextion_command("vis popup,1");
+}
+void display_hide_popup()
+{
+        nextion_command("vis popup,0");
 }
