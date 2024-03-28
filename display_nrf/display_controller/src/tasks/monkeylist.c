@@ -142,7 +142,6 @@ bool getMonkeyByID(struct Monkey* monkey, int id)
 {
     k_mutex_lock(&monkey_mutex, K_FOREVER);
     struct Monkey* monkeyList = head_ref;
-    int count = 0;
 
     // Copy monkeys to the array
     while (monkeyList != NULL) {
@@ -153,7 +152,7 @@ bool getMonkeyByID(struct Monkey* monkey, int id)
 
     k_mutex_unlock(&monkey_mutex);
 }
-}
+
 
 // Function to get three monkeys from the list starting from a specific index
 // Returns true if monkeys are retrieved successfully, false otherwise

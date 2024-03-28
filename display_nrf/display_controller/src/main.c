@@ -66,10 +66,11 @@ void thread1(void *p1, void *p2, void *p3)
         int num = sys_rand32_get() % 5 + 1;
         int rssi = sys_rand32_get() % 100 - 50;
         int record_time = sys_rand32_get() % 10 + 1;
+        bt_addr_le_t addr;
         enum main_state state =  ST_INIT + (sys_rand32_get() % 3);
 
         // Append or modify Monkey
-        appendOrModifyMonkey(num, rssi, record_time, state);
+        appendOrModifyMonkey(num, rssi, record_time, state,addr);
 
         // Print the Monkey list
         printk("Thread1 Monkey List:\n");

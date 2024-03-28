@@ -321,7 +321,7 @@ void hide_device_2()
         nextion_command("vis m2_DS_val,0");
         nextion_command("vis m2_DR,0");
         nextion_command("vis m2_DR_val,0");  
-        device_1_reset = true; 
+        device_2_reset = true; 
 }
 
 void hide_device_3()
@@ -334,7 +334,7 @@ void hide_device_3()
         nextion_command("vis m3_DS_val,0");
         nextion_command("vis m3_DR,0");
         nextion_command("vis m3_DR_val,0");   
-        device_1_reset = true;
+        device_3_reset = true;
 }
 
 void hide_more_devices()
