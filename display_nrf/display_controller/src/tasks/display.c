@@ -8,6 +8,10 @@ LOG_MODULE_REGISTER(display);
 
 static const struct device *const uart_dev = DEVICE_DT_GET(UART_DEVICE_NODE);
 
+//device reset value
+bool device_1_reset = false;
+bool device_2_reset = false;
+bool device_3_reset = false;
 
 
 void nextion_command(char *buf)
@@ -28,7 +32,27 @@ void display_main_page()
 }
 
 void display_device_1(int deviceNbr, int rssi, int nbrDays, enum main_state state, bool selected)
-{       
+{
+        static int prev_deviceNbr = -1;
+        static int prev_rssi = -1;
+        static int prev_nbrDays = -1;
+        static enum main_state prev_state = ST_INIT;
+        static bool prev_selected = false;
+
+        if (deviceNbr == prev_deviceNbr && rssi == prev_rssi && nbrDays == prev_nbrDays &&
+                state == prev_state && selected == prev_selected && !device_1_reset) {
+                // No change, return without sending Nextion commands
+                return;
+        }
+
+        // Update previous values
+        prev_deviceNbr = deviceNbr;
+        prev_rssi = rssi;
+        prev_nbrDays = nbrDays;
+        prev_state = state;
+        prev_selected = selected;
+        device_1_reset = false;
+
         if(selected)
         {
                 nextion_command("m1_pic.pic=3");
@@ -95,7 +119,27 @@ void display_device_1(int deviceNbr, int rssi, int nbrDays, enum main_state stat
 }
 
 void display_device_2(int deviceNbr, int rssi, int nbrDays, enum main_state state, bool selected)
-{       
+{
+        static int prev_deviceNbr = -1;
+        static int prev_rssi = -1;
+        static int prev_nbrDays = -1;
+        static enum main_state prev_state = ST_INIT;
+        static bool prev_selected = false;
+
+        if (deviceNbr == prev_deviceNbr && rssi == prev_rssi && nbrDays == prev_nbrDays &&
+                state == prev_state && selected == prev_selected && !device_2_reset) {
+                // No change, return without sending Nextion commands
+                return;
+        }
+
+        // Update previous values
+        prev_deviceNbr = deviceNbr;
+        prev_rssi = rssi;
+        prev_nbrDays = nbrDays;
+        prev_state = state;
+        prev_selected = selected;
+        device_2_reset = false;
+
         if(selected)
         {
                 nextion_command("m2_pic.pic=3");
@@ -162,7 +206,27 @@ void display_device_2(int deviceNbr, int rssi, int nbrDays, enum main_state stat
 }
 
 void display_device_3(int deviceNbr, int rssi, int nbrDays, enum main_state state, bool selected)
-{       
+{
+        static int prev_deviceNbr = -1;
+        static int prev_rssi = -1;
+        static int prev_nbrDays = -1;
+        static enum main_state prev_state = ST_INIT;
+        static bool prev_selected = false;
+
+        if (deviceNbr == prev_deviceNbr && rssi == prev_rssi && nbrDays == prev_nbrDays &&
+                state == prev_state && selected == prev_selected && !device_3_reset) {
+                // No change, return without sending Nextion commands
+                return;
+        }
+
+        // Update previous values
+        prev_deviceNbr = deviceNbr;
+        prev_rssi = rssi;
+        prev_nbrDays = nbrDays;
+        prev_state = state;
+        prev_selected = selected;
+        device_3_reset = false;
+
         if(selected)
         {
                 nextion_command("m3_pic.pic=3");
@@ -244,6 +308,7 @@ void hide_device_1()
         nextion_command("vis m1_DS_val,0");
         nextion_command("vis m1_DR,0");
         nextion_command("vis m1_DR_val,0");   
+        device_1_reset = true;
 }
 
 void hide_device_2()
@@ -255,7 +320,8 @@ void hide_device_2()
         nextion_command("vis m2_DS,0");
         nextion_command("vis m2_DS_val,0");
         nextion_command("vis m2_DR,0");
-        nextion_command("vis m2_DR_val,0");   
+        nextion_command("vis m2_DR_val,0");  
+        device_1_reset = true; 
 }
 
 void hide_device_3()
@@ -268,6 +334,7 @@ void hide_device_3()
         nextion_command("vis m3_DS_val,0");
         nextion_command("vis m3_DR,0");
         nextion_command("vis m3_DR_val,0");   
+        device_1_reset = true;
 }
 
 void hide_more_devices()

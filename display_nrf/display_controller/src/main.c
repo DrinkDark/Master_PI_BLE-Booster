@@ -12,6 +12,7 @@ LOG_MODULE_REGISTER(main);
 //#include "tasks/global.h"
 //#include "tasks/display.h"
 #include "tasks/monkeylist.h"
+#include "tasks/display_controller.h"
 
 
 K_HEAP_DEFINE(monkeyListHeap,32768);
@@ -39,6 +40,8 @@ void main(void)
 
         initMonkeyList();
 
+        Task_Display_Controller_Init();
+
         // Create thread 1
         k_tid_t tid1 = k_thread_create(&th1, STACK1, STACK_SIZE, thread1, NULL, NULL, NULL,
                                         THREAD_PRIORITY, 0, K_NO_WAIT);
@@ -62,7 +65,7 @@ void thread1(void *p1, void *p2, void *p3)
         // Generate random Monkey attributes
         int num = sys_rand32_get() % 5 + 1;
         int rssi = sys_rand32_get() % 100 - 50;
-        int record_time = k_uptime_get();
+        int record_time = sys_rand32_get() % 10 + 1;
         enum main_state state =  ST_INIT + (sys_rand32_get() % 3);
 
         // Append or modify Monkey
@@ -103,7 +106,7 @@ void thread2(void *p1, void *p2, void *p3)
 
         for(int i = 0; i<= tot;i++)
         {
-                printk("%d, ",array[i].num);
+            printk("%d, ",array[i].num);
         }
 
         k_sleep(K_MSEC(3000));
