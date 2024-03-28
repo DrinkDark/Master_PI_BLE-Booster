@@ -5,6 +5,8 @@
 #include <zephyr/drivers/uart.h>
 #include <zephyr/sys/mutex.h>
 
+#include <zephyr/bluetooth/bluetooth.h>
+
 extern struct k_heap monkeyListHeap;
 
 enum main_state {
@@ -25,16 +27,18 @@ struct Monkey {
     int record_time;
     enum main_state state;
     struct Monkey * next;
+    bt_addr_le_t btAddress;
     
 };
 
 // Function prototypes
 void initMonkeyList();
-void appendOrModifyMonkey(int num, int rssi, int record_time, enum main_state state);
+void appendOrModifyMonkey(int num, int rssi, int record_time, enum main_state state, bt_addr_le_t address);
 void removeMonkey(int num);
 void printMonkeys();
 void getAllMonkeys(struct Monkey* monkeysArray);
 bool getMonkeyAtIndex(struct Monkey* monkey, int index);
+bool getMonkeyByID(struct Monkey* monkey, int id);
 bool getThreeMonkeys(struct Monkey* monkeys, int startIndex);
 int getNumMonkeys();
 
