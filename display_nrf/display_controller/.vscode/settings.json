@@ -9,6 +9,7 @@
         "kernel.h": "c",
         "rand32.h": "c",
         "monkeylist.h": "c",
-        "display_controller.h": "c"
+        "display_controller.h": "c",
+        "ratio": "c"
     }
 }

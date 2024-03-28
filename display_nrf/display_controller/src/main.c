@@ -13,6 +13,7 @@ LOG_MODULE_REGISTER(main);
 //#include "tasks/display.h"
 #include "tasks/monkeylist.h"
 #include "tasks/display_controller.h"
+#include "tasks/button_manager.h"
 
 
 K_HEAP_DEFINE(monkeyListHeap,32768);
@@ -39,6 +40,8 @@ void main(void)
         k_thread_name_set(k_current_get(), "main");
 
         initMonkeyList();
+
+        button_manager_init();
 
         Task_Display_Controller_Init();
 
@@ -73,8 +76,8 @@ void thread1(void *p1, void *p2, void *p3)
         appendOrModifyMonkey(num, rssi, record_time, state,addr);
 
         // Print the Monkey list
-        printk("Thread1 Monkey List:\n");
-        printMonkeys();
+        //printk("Thread1 Monkey List:\n");
+        //printMonkeys();
 
         k_sleep(K_MSEC(2000));
     }
@@ -97,8 +100,8 @@ void thread2(void *p1, void *p2, void *p3)
         removeMonkey(num);
 
         // Print the Monkey list
-        printk("Thread2 Monkey List:\n");
-        printMonkeys();
+        //printk("Thread2 Monkey List:\n");
+        //printMonkeys();
 
         //get all monkeys example
         int tot = getNumMonkeys();
@@ -107,7 +110,7 @@ void thread2(void *p1, void *p2, void *p3)
 
         for(int i = 0; i<= tot;i++)
         {
-            printk("%d, ",array[i].num);
+            //printk("%d, ",array[i].num);
         }
 
         k_sleep(K_MSEC(3000));

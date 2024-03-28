@@ -20,44 +20,121 @@ K_THREAD_STACK_DEFINE(DISPLAY_CONTROLLER_STACK, DISPLAY_CONTROLLER_STACK_SIZE);
 static struct k_thread displayControllerThread;
 
 
+//selection variable
+int select = 0;
+
+//number of monkeys
+int monkeyNbr;
+
+enum pages current_page = MAIN_PAGE;
+
 //-----------------------------------------------------------------------------------------------------------------------
 /*! displayContreller
 * @brief displayContreller 
 */
 void displayController() 
 {
-    struct Monkey monkeyArray[3];
+    
 
 	while(true)	// --------------------------------------------------------------------Thread infinite loop
 	{
-        int num = getNumMonkeys();
-        if(num == 1)
-        {
-            getMonkeyAtIndex(monkeyArray, 0);
-            display_device_1(monkeyArray[0].num, monkeyArray[0].rssi, monkeyArray[0].record_time, monkeyArray[0].state, true);
-            hide_device_2();
-            hide_device_3();
-        }
-        else if(num == 2)
-        {
-            getMonkeyAtIndex(&(monkeyArray[0]), 0);
-            display_device_1(monkeyArray[0].num, monkeyArray[0].rssi, monkeyArray[0].record_time, monkeyArray[0].state, true);
-            getMonkeyAtIndex(&(monkeyArray[1]), 1);
-            display_device_2(monkeyArray[1].num, monkeyArray[1].rssi, monkeyArray[1].record_time, monkeyArray[1].state, false);
-            hide_device_3();
-        }
-        else if(num >=3)
-        {
-            getThreeMonkeys(monkeyArray, 0);
-            display_device_1(monkeyArray[0].num, monkeyArray[0].rssi, monkeyArray[0].record_time, monkeyArray[0].state, true);
-            display_device_2(monkeyArray[1].num, monkeyArray[1].rssi, monkeyArray[1].record_time, monkeyArray[1].state, false);
-            display_device_3(monkeyArray[2].num, monkeyArray[2].rssi, monkeyArray[2].record_time, monkeyArray[2].state, false);
-        }
-
+        if(current_page == MAIN_PAGE)
+            updateMainPage();
+       
         k_msleep(500);
 	}	// ------------------------------------------------------------------------------  end of thread infinite loop
 }
 
+
+//-----------------------------------------------------------------------------------------------------------------------
+/*! updateMainPage
+* @brief updateMainPage 
+*/
+void updateMainPage()
+{
+    static struct Monkey monkeyArray[3];
+
+    monkeyNbr = getNumMonkeys();
+
+    if(monkeyNbr == 1)
+    {
+        if(select >= 1)
+            select = 0;
+            
+        getMonkeyAtIndex(monkeyArray, 0);
+        display_device_1(monkeyArray[0].num, monkeyArray[0].rssi, monkeyArray[0].record_time, monkeyArray[0].state, (select == 0));
+        hide_device_2();
+        hide_device_3();
+        hide_more_devices();
+    }
+    else if(monkeyNbr == 2)
+    {
+        if(select == 2)
+            select = 1;
+        getMonkeyAtIndex(&(monkeyArray[0]), 0);
+        display_device_1(monkeyArray[0].num, monkeyArray[0].rssi, monkeyArray[0].record_time, monkeyArray[0].state, (select == 0));
+        getMonkeyAtIndex(&(monkeyArray[1]), 1);
+        display_device_2(monkeyArray[1].num, monkeyArray[1].rssi, monkeyArray[1].record_time, monkeyArray[1].state, (select == 1));
+        hide_device_3();
+        hide_more_devices();
+    }
+    else if(monkeyNbr >=3)
+    {
+        getThreeMonkeys(monkeyArray, 0);
+        display_device_1(monkeyArray[0].num, monkeyArray[0].rssi, monkeyArray[0].record_time, monkeyArray[0].state, (select == 0));
+        display_device_2(monkeyArray[1].num, monkeyArray[1].rssi, monkeyArray[1].record_time, monkeyArray[1].state, (select == 1));
+        display_device_3(monkeyArray[2].num, monkeyArray[2].rssi, monkeyArray[2].record_time, monkeyArray[2].state, (select == 2));
+
+        if(monkeyNbr == 3)
+            hide_more_devices();
+        else
+            display_more_devices();
+    }
+}
+
+//-----------------------------------------------------------------------------------------------------------------------
+/*! downPressed
+* @brief downPressed is called by the button mangager
+*/
+void downPressed()
+{
+    if(current_page == MAIN_PAGE)
+    {
+        if(select<monkeyNbr-1 && select < 2)
+            select++;
+    }
+}
+
+//-----------------------------------------------------------------------------------------------------------------------
+/*! upPressed
+* @brief upPressed is called by the button mangager
+*/
+void upPressed()
+{
+    if(current_page == MAIN_PAGE)
+    {
+        if(select>0)
+            select--;
+    }
+}
+
+//-----------------------------------------------------------------------------------------------------------------------
+/*! selectPressed
+* @brief selectPressed is called by the button mangager
+*/
+void selectPressed()
+{
+
+}
+
+//-----------------------------------------------------------------------------------------------------------------------
+/*! triggerPressed
+* @brief triggerPressed is called by the button mangager
+*/
+void triggerPressed()
+{
+
+}
 
 
 
