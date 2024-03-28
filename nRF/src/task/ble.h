@@ -16,5 +16,4 @@ void ble_connect(void);
 void ble_disconnect(void);
 void ble_send_data(uint8_t *data, uint16_t len);
 
-
 #endif /*_BLE_H_*/
