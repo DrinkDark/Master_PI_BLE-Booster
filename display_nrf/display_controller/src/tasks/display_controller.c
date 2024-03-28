@@ -6,7 +6,7 @@ LOG_MODULE_REGISTER(display_controller);
 #include <zephyr/kernel.h>
 
 #include "display_controller.h"
-#include "monkeylist.h"
+
 
 //! Stack size for the DISPLAY_CONTROLLER thread
 #define DISPLAY_CONTROLLER_STACK_SIZE 2048
@@ -119,7 +119,8 @@ void connectDevice()
 */
 void deviceConnected(struct Monkey monkey)
 {
-    
+    display_device_page(monkey.num,monkey.rssi,monkey.record_time,monkey.state);
+    current_page = DEVICE_PAGE;
 }
 
 //-----------------------------------------------------------------------------------------------------------------------
@@ -182,6 +183,8 @@ void triggerPressed()
 */
 void Task_Display_Controller_Init( void ){
     display_init();
+    k_msleep(1000);
+    display_main_page();
 	k_thread_create	(														\
 					&displayControllerThread,								\
 					DISPLAY_CONTROLLER_STACK,								\

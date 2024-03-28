@@ -3,6 +3,9 @@
 
 #include <zephyr/kernel.h>
 
+#include "display.h"
+#include "monkeylist.h"
+
 enum pages {
         MAIN_PAGE         = 0x00,
         LOADING_PAGE      = 0x01,
