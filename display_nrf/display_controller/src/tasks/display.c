@@ -13,6 +13,14 @@ bool device_1_reset = false;
 bool device_2_reset = false;
 bool device_3_reset = false;
 
+//mutex to protect print
+static struct k_mutex display_mutex;
+
+void display_init()
+{
+        k_mutex_init(&display_mutex);
+}
+
 
 void nextion_command(char *buf)
 {
@@ -28,11 +36,15 @@ void nextion_command(char *buf)
 
 void display_main_page()
 {
+        k_mutex_lock(&display_mutex, K_FOREVER);
         nextion_command("page 1");
+        k_mutex_unlock(&display_mutex);
 }
 
 void display_device_1(int deviceNbr, int rssi, int nbrDays, enum main_state state, bool selected)
 {
+        k_mutex_lock(&display_mutex, K_FOREVER);
+
         static int prev_deviceNbr = -1;
         static int prev_rssi = -1;
         static int prev_nbrDays = -1;
@@ -42,6 +54,7 @@ void display_device_1(int deviceNbr, int rssi, int nbrDays, enum main_state stat
         if (deviceNbr == prev_deviceNbr && rssi == prev_rssi && nbrDays == prev_nbrDays &&
                 state == prev_state && selected == prev_selected && !device_1_reset) {
                 // No change, return without sending Nextion commands
+                k_mutex_unlock(&display_mutex);
                 return;
         }
 
@@ -116,10 +129,14 @@ void display_device_1(int deviceNbr, int rssi, int nbrDays, enum main_state stat
         nextion_command("vis m1_DR_val,1");
 
         k_msleep(20);
+
+        k_mutex_unlock(&display_mutex);
 }
 
 void display_device_2(int deviceNbr, int rssi, int nbrDays, enum main_state state, bool selected)
 {
+        k_mutex_lock(&display_mutex, K_FOREVER);
+        
         static int prev_deviceNbr = -1;
         static int prev_rssi = -1;
         static int prev_nbrDays = -1;
@@ -129,6 +146,7 @@ void display_device_2(int deviceNbr, int rssi, int nbrDays, enum main_state stat
         if (deviceNbr == prev_deviceNbr && rssi == prev_rssi && nbrDays == prev_nbrDays &&
                 state == prev_state && selected == prev_selected && !device_2_reset) {
                 // No change, return without sending Nextion commands
+                k_mutex_unlock(&display_mutex);
                 return;
         }
 
@@ -203,10 +221,14 @@ void display_device_2(int deviceNbr, int rssi, int nbrDays, enum main_state stat
         nextion_command("vis m2_DR_val,1");
 
         k_msleep(20);
+
+        k_mutex_unlock(&display_mutex);
 }
 
 void display_device_3(int deviceNbr, int rssi, int nbrDays, enum main_state state, bool selected)
 {
+        k_mutex_lock(&display_mutex, K_FOREVER);
+
         static int prev_deviceNbr = -1;
         static int prev_rssi = -1;
         static int prev_nbrDays = -1;
@@ -216,6 +238,7 @@ void display_device_3(int deviceNbr, int rssi, int nbrDays, enum main_state stat
         if (deviceNbr == prev_deviceNbr && rssi == prev_rssi && nbrDays == prev_nbrDays &&
                 state == prev_state && selected == prev_selected && !device_3_reset) {
                 // No change, return without sending Nextion commands
+                k_mutex_unlock(&display_mutex);
                 return;
         }
 
@@ -290,16 +313,21 @@ void display_device_3(int deviceNbr, int rssi, int nbrDays, enum main_state stat
         nextion_command("vis m3_DR_val,1");
 
         k_msleep(20);
+        k_mutex_unlock(&display_mutex);
 }
 
 void display_more_devices()
 {
+        k_mutex_lock(&display_mutex, K_FOREVER);
         nextion_command("vis more,1");
+        k_mutex_unlock(&display_mutex);
 }
 
 
 void hide_device_1()
 {
+        k_mutex_lock(&display_mutex, K_FOREVER);
+
         nextion_command("vis m1_pic,0");
         nextion_command("vis m1_title,0");
         nextion_command("vis m1_rssi,0");
@@ -309,10 +337,14 @@ void hide_device_1()
         nextion_command("vis m1_DR,0");
         nextion_command("vis m1_DR_val,0");   
         device_1_reset = true;
+
+        k_mutex_unlock(&display_mutex);
 }
 
 void hide_device_2()
 {
+        k_mutex_lock(&display_mutex, K_FOREVER);
+
         nextion_command("vis m2_pic,0");
         nextion_command("vis m2_title,0");
         nextion_command("vis m2_rssi,0");
@@ -322,10 +354,14 @@ void hide_device_2()
         nextion_command("vis m2_DR,0");
         nextion_command("vis m2_DR_val,0");  
         device_2_reset = true; 
+
+        k_mutex_unlock(&display_mutex);
 }
 
 void hide_device_3()
 {
+        k_mutex_lock(&display_mutex, K_FOREVER);
+
         nextion_command("vis m3_pic,0");
         nextion_command("vis m3_title,0");
         nextion_command("vis m3_rssi,0");
@@ -335,25 +371,44 @@ void hide_device_3()
         nextion_command("vis m3_DR,0");
         nextion_command("vis m3_DR_val,0");   
         device_3_reset = true;
+
+        k_mutex_unlock(&display_mutex);
+}
+
+void reset_main_page()
+{
+        device_1_reset = true;
+        device_2_reset = true;
+        device_3_reset = true;  
 }
 
 void hide_more_devices()
 {
+        k_mutex_lock(&display_mutex, K_FOREVER);
+
         nextion_command("vis more,0");
+
+        k_mutex_unlock(&display_mutex);
 }
 
 void display_loading_page(int deviceNbr)
 {
+        k_mutex_lock(&display_mutex, K_FOREVER);
+
         nextion_command("page 3");
 
         char buf[50];
 
         sprintf(buf,"lbl_title.txt=\"Device %d\"",deviceNbr);
         nextion_command(buf);
+
+        k_mutex_unlock(&display_mutex);
 }
 
 void display_device_page(int deviceNbr, int rssi, int nbrDays, enum main_state state)
 {
+        k_mutex_lock(&display_mutex, K_FOREVER);
+
         nextion_command("page 2");
 
         char buf[50];
@@ -383,42 +438,70 @@ void display_device_page(int deviceNbr, int rssi, int nbrDays, enum main_state s
                 nextion_command("lbl_DS_val.txt=\"Power Saving\"");
         else if(state==ST_ERROR)
                 nextion_command("lbl_DS_val.txt=\"Error\"");
+
+        k_mutex_unlock(&display_mutex);
 }
 
 
 void display_select_open()
-{
+{       
+        k_mutex_lock(&display_mutex, K_FOREVER);
+
         nextion_command("btn_open.pic=5");
         nextion_command("btn_reset.pic=8");
         nextion_command("btn_toggle.pic=10");
         nextion_command("btn_exit.pic=14");
+
+        k_mutex_unlock(&display_mutex);
 }
 void display_select_reset()
 {
+        k_mutex_lock(&display_mutex, K_FOREVER);
+
         nextion_command("btn_open.pic=6");
         nextion_command("btn_reset.pic=7");
         nextion_command("btn_toggle.pic=10");
         nextion_command("btn_exit.pic=14");
+
+        k_mutex_unlock(&display_mutex);
 }
 void display_select_toggle()
 {
+        k_mutex_lock(&display_mutex, K_FOREVER);
+
         nextion_command("btn_open.pic=6");
         nextion_command("btn_reset.pic=8");
         nextion_command("btn_toggle.pic=9");
         nextion_command("btn_exit.pic=14");
+
+        k_mutex_unlock(&display_mutex);
 }
 void display_select_exit()
 {
+        k_mutex_lock(&display_mutex, K_FOREVER);
+
         nextion_command("btn_open.pic=6");
         nextion_command("btn_reset.pic=8");
         nextion_command("btn_toggle.pic=10");
         nextion_command("btn_exit.pic=13");
+
+        k_mutex_unlock(&display_mutex);
 }
 void display_show_popup()
 {
+        k_mutex_lock(&display_mutex, K_FOREVER);
+
         nextion_command("vis popup,1");
+
+        k_mutex_unlock(&display_mutex);
 }
 void display_hide_popup()
 {
+        k_mutex_lock(&display_mutex, K_FOREVER);
+
         nextion_command("vis popup,0");
+
+        k_mutex_unlock(&display_mutex);
 }
+
+

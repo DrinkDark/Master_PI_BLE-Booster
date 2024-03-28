@@ -44,7 +44,17 @@ void main(void)
         button_manager_init();
 
         Task_Display_Controller_Init();
-
+        
+        bt_addr_le_t addr;
+        appendOrModifyMonkey(1, 1, 1, ST_INIT,addr);
+        appendOrModifyMonkey(2, 2, 2, ST_INIT,addr);
+        appendOrModifyMonkey(3, 3, 3, ST_INIT,addr);
+        appendOrModifyMonkey(4, 4, 4, ST_INIT,addr);
+        appendOrModifyMonkey(5, 5, 5, ST_INIT,addr);
+        appendOrModifyMonkey(6, 6, 6, ST_INIT,addr);
+        appendOrModifyMonkey(7, 7, 7, ST_INIT,addr);
+        appendOrModifyMonkey(8, 8, 8, ST_INIT,addr);
+/*
         // Create thread 1
         k_tid_t tid1 = k_thread_create(&th1, STACK1, STACK_SIZE, thread1, NULL, NULL, NULL,
                                         THREAD_PRIORITY, 0, K_NO_WAIT);
@@ -54,6 +64,7 @@ void main(void)
         k_tid_t tid2 = k_thread_create(&th2, STACK2, STACK_SIZE, thread2, NULL, NULL, NULL,
                                         THREAD_PRIORITY, 0, K_NO_WAIT);
         k_thread_name_set(tid2, "Thread2");
+*/
 }
  
 // Thread function for thread 1

@@ -12,6 +12,7 @@
 
 
 void nextion_command(char *buf);
+void display_init();
 
 // main page function
 void display_main_page();
@@ -23,6 +24,7 @@ void hide_device_1();
 void hide_device_2();
 void hide_device_3();
 void hide_more_devices();
+void reset_main_page();
 
 // loading page 
 void display_loading_page(int deviceNbr);

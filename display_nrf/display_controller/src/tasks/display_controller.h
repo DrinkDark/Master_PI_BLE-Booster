@@ -22,6 +22,18 @@ void displayController();
 void updateMainPage();
 
 //-----------------------------------------------------------------------------------------------------------------------
+/*! connectDevice
+* @brief connectDevice is called to connect to a device
+*/
+void connectDevice();
+
+//-----------------------------------------------------------------------------------------------------------------------
+/*! deviceConnected
+* @brief deviceConnected is called by the BLE controller when device is connected
+*/
+void deviceConnected(struct Monkey monkey);
+
+//-----------------------------------------------------------------------------------------------------------------------
 /*! downPressed
 * @brief downPressed is called by the button mangager
 */

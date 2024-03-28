@@ -22,6 +22,8 @@ static struct k_thread displayControllerThread;
 
 //selection variable
 int select = 0;
+int selectOffset = 0;
+
 
 //number of monkeys
 int monkeyNbr;
@@ -40,8 +42,9 @@ void displayController()
 	{
         if(current_page == MAIN_PAGE)
             updateMainPage();
+        
        
-        k_msleep(500);
+        k_msleep(200);
 	}	// ------------------------------------------------------------------------------  end of thread infinite loop
 }
 
@@ -60,7 +63,7 @@ void updateMainPage()
     {
         if(select >= 1)
             select = 0;
-            
+
         getMonkeyAtIndex(monkeyArray, 0);
         display_device_1(monkeyArray[0].num, monkeyArray[0].rssi, monkeyArray[0].record_time, monkeyArray[0].state, (select == 0));
         hide_device_2();
@@ -80,16 +83,43 @@ void updateMainPage()
     }
     else if(monkeyNbr >=3)
     {
-        getThreeMonkeys(monkeyArray, 0);
+        getThreeMonkeys(monkeyArray, 0+selectOffset);
         display_device_1(monkeyArray[0].num, monkeyArray[0].rssi, monkeyArray[0].record_time, monkeyArray[0].state, (select == 0));
         display_device_2(monkeyArray[1].num, monkeyArray[1].rssi, monkeyArray[1].record_time, monkeyArray[1].state, (select == 1));
         display_device_3(monkeyArray[2].num, monkeyArray[2].rssi, monkeyArray[2].record_time, monkeyArray[2].state, (select == 2));
 
-        if(monkeyNbr == 3)
+        if(monkeyNbr-selectOffset == 3)
             hide_more_devices();
         else
             display_more_devices();
     }
+
+}
+
+//-----------------------------------------------------------------------------------------------------------------------
+/*! connectDevice
+* @brief connectDevice is called to connect to a device
+*/
+void connectDevice()
+{
+    struct Monkey monkey;
+    getMonkeyAtIndex(&monkey,selectOffset+select);
+    display_loading_page(monkey.num);
+    //call bluetooth callback function
+    current_page = LOADING_PAGE;
+
+    //TEST CODE
+    k_msleep(1000);
+    deviceConnected(monkey);
+}
+
+//-----------------------------------------------------------------------------------------------------------------------
+/*! deviceConnected
+* @brief deviceConnected is called by the BLE controller when device is connected
+*/
+void deviceConnected(struct Monkey monkey)
+{
+    
 }
 
 //-----------------------------------------------------------------------------------------------------------------------
@@ -102,6 +132,8 @@ void downPressed()
     {
         if(select<monkeyNbr-1 && select < 2)
             select++;
+        else if(select == 2 && monkeyNbr-3-selectOffset>0)
+            selectOffset++;
     }
 }
 
@@ -115,6 +147,8 @@ void upPressed()
     {
         if(select>0)
             select--;
+        else if(selectOffset>0)
+            selectOffset--;
     }
 }
 
@@ -124,7 +158,10 @@ void upPressed()
 */
 void selectPressed()
 {
-
+    if(current_page == MAIN_PAGE)
+    {
+        connectDevice();
+    }
 }
 
 //-----------------------------------------------------------------------------------------------------------------------
@@ -144,6 +181,7 @@ void triggerPressed()
 * @brief 
 */
 void Task_Display_Controller_Init( void ){
+    display_init();
 	k_thread_create	(														\
 					&displayControllerThread,								\
 					DISPLAY_CONTROLLER_STACK,								\
