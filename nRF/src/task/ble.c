@@ -7,9 +7,12 @@
 
 #include "ble.h"
 #include "../define.h"
+#include "monkeylist.h"
 
 #define BLE_STACK_SIZE 2048
 #define BLE_PRIORITY 6
+#define NAME_LEN 30
+#define MANUFACTURER_LEN 4
 
 K_THREAD_STACK_DEFINE(BLE_STACK, BLE_STACK_SIZE);
 static struct k_thread bleThread;
@@ -96,7 +99,7 @@ void ble_device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type, struc
     char name[30];
     struct net_buf_simple *data = ad;
 
-    bt_data_parse(data, name_data_cb, name);
+    bt_data_parse(data, data_cb, name);
 
     //bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
     if((strstr(name, "Speak No Evil") || strstr(name, "A51 de Adrien"))!= NULL){
@@ -106,22 +109,41 @@ void ble_device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type, struc
     }
 }
 
+int parse_device_name(char* name) {
+    int value = 0;
+    sscanf(name, "%*[^0-9]%d", &value);
+    return value;
+}
 
-bool name_data_cb(struct bt_data *data, void *user_data)
+bool data_cb(struct bt_data *data, void *user_data)
 {
 	char *name = user_data;
 
 	switch (data->type) {
 	case BT_DATA_NAME_SHORTENED:
 	case BT_DATA_NAME_COMPLETE:
-		memcpy(name, data->data, MIN(data->data_len, 30 - 1));
-        name[MIN(data->data_len, 30 - 1)] = '\0';
+		memcpy(name, data->data, MIN(data->data_len, NAME_LEN - 1));
+        name[MIN(data->data_len, NAME_LEN - 1)] = '\0';
 		return false;
 	default:
 		return true;
 	}
 }
 
+bool manufacturer_data_cb(struct bt_data *data, void *user_data)
+{
+	char *manufacturer = user_data;
+    int len = 0;
+
+	switch (data->type) {
+	case BT_DATA_MANUFACTURER_DATA:
+        len = MIN(data->data_len, MANUFACTURER_LEN);
+        memcpy(manufacturer, data->data, MIN(data->data_len, MANUFACTURER_LEN));
+        return false;
+	default:
+		return false;
+	}
+}
 void ble_connect(void){
 
 }
