@@ -42,8 +42,10 @@ void displayController()
 	{
         if(current_page == MAIN_PAGE)
             updateMainPage();
-        
-       
+
+        if(current_page == DEVICE_PAGE)
+            updateDevicePage();
+
         k_msleep(200);
 	}	// ------------------------------------------------------------------------------  end of thread infinite loop
 }
@@ -97,6 +99,30 @@ void updateMainPage()
 }
 
 //-----------------------------------------------------------------------------------------------------------------------
+/*! updateDevicePage
+* @brief updateDevicePage 
+*/
+void updateDevicePage()
+{
+    static int prevSelect = -1;
+
+    if(prevSelect != select)
+    {
+        prevSelect = select;
+
+        if(select == 0)
+            display_select_open();
+        else if(select == 1)
+            display_select_reset();
+        else if(select == 2)
+            display_select_toggle();
+        else if(select == 3)
+            display_select_exit();
+        
+    }
+}
+
+//-----------------------------------------------------------------------------------------------------------------------
 /*! connectDevice
 * @brief connectDevice is called to connect to a device
 */
@@ -120,6 +146,7 @@ void connectDevice()
 void deviceConnected(struct Monkey monkey)
 {
     display_device_page(monkey.num,monkey.rssi,monkey.record_time,monkey.state);
+    select = 0;
     current_page = DEVICE_PAGE;
 }
 
@@ -136,6 +163,12 @@ void downPressed()
         else if(select == 2 && monkeyNbr-3-selectOffset>0)
             selectOffset++;
     }
+
+    if(current_page == DEVICE_PAGE)
+    {
+        if(select<3)
+            select++;
+    }
 }
 
 //-----------------------------------------------------------------------------------------------------------------------
@@ -150,6 +183,12 @@ void upPressed()
             select--;
         else if(selectOffset>0)
             selectOffset--;
+    }
+
+    if(current_page == DEVICE_PAGE)
+    {
+        if(select>0)
+            select--;
     }
 }
 
