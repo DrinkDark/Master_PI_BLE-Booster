@@ -9,6 +9,7 @@
 #include "define.h"
 #include "task/led.h"
 #include "task/button_manager.h"
+#include "task/ble.h"
 
 
 
@@ -18,6 +19,7 @@ int main(void)
 	 	printk("Programm started!\n");
 	#endif
 
+	ble_thread_init();
 	led_thread_init();
 	button_manager_init();
 
