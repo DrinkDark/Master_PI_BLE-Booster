@@ -13,7 +13,7 @@ void initMonkeyList() {
 }
 
 // Function to append a Monkey node to the linked list or modify existing attributes if the Monkey already exists
-void appendOrModifyMonkey(int num, int rssi, int record_time, enum main_state state) {
+void appendOrModifyMonkey(int num, int rssi, int record_time, enum main_state state, bt_addr_le_t address) {
     k_mutex_lock(&monkey_mutex, K_FOREVER);
 
     struct Monkey* currentMonkey = head_ref;
@@ -25,6 +25,7 @@ void appendOrModifyMonkey(int num, int rssi, int record_time, enum main_state st
             currentMonkey->rssi = rssi;
             currentMonkey->record_time = record_time;
             currentMonkey->state = state;
+            currentMonkey->btAddress = address;
             k_mutex_unlock(&monkey_mutex);
             return;
         }
@@ -38,6 +39,7 @@ void appendOrModifyMonkey(int num, int rssi, int record_time, enum main_state st
         newMonkey->rssi = rssi;
         newMonkey->record_time = record_time;
         newMonkey->state = state;
+        newMonkey->btAddress = address;
         newMonkey->next = NULL;
 
         if (head_ref == NULL) {
@@ -134,6 +136,23 @@ bool getMonkeyAtIndex(struct Monkey* monkey, int index) {
     k_mutex_unlock(&monkey_mutex);
     return false; // Monkey not found at the specified index
 }
+
+// Function to get a single monkey from the list by its device id
+bool getMonkeyByID(struct Monkey* monkey, int id)
+{
+    k_mutex_lock(&monkey_mutex, K_FOREVER);
+    struct Monkey* monkeyList = head_ref;
+
+    // Copy monkeys to the array
+    while (monkeyList != NULL) {
+        if(monkeyList->num == id)
+            *monkey = *monkeyList;
+        monkeyList = monkeyList->next;
+    }
+
+    k_mutex_unlock(&monkey_mutex);
+}
+
 
 // Function to get three monkeys from the list starting from a specific index
 // Returns true if monkeys are retrieved successfully, false otherwise
