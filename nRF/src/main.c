@@ -10,8 +10,9 @@
 #include "task/led.h"
 #include "task/button_manager.h"
 #include "task/ble.h"
+#include "task/monkeylist.h"
 
-
+K_HEAP_DEFINE(monkeyListHeap,32768);
 
 int main(void)
 {
@@ -22,6 +23,7 @@ int main(void)
 	ble_thread_init();
 	led_thread_init();
 	button_manager_init();
+	initMonkeyList();
 
 	k_sleep( K_FOREVER );
 	return 0;
