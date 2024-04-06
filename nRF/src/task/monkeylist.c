@@ -13,7 +13,7 @@ void initMonkeyList() {
 }
 
 // Function to append a Monkey node to the linked list or modify existing attributes if the Monkey already exists
-void appendOrModifyMonkey(int num, int rssi, int record_time, enum main_state state, bt_addr_le_t address) {
+void appendOrModifyMonkey(int num, int rssi, int record_time, enum main_state state, bt_addr_le_t address, uint32_t lastSeen) {
     k_mutex_lock(&monkey_mutex, K_FOREVER);
 
     struct Monkey* currentMonkey = head_ref;
@@ -26,6 +26,7 @@ void appendOrModifyMonkey(int num, int rssi, int record_time, enum main_state st
             currentMonkey->record_time = record_time;
             currentMonkey->state = state;
             currentMonkey->btAddress = address;
+            currentMonkey->lastSeen = lastSeen;
             k_mutex_unlock(&monkey_mutex);
             return;
         }
@@ -40,6 +41,7 @@ void appendOrModifyMonkey(int num, int rssi, int record_time, enum main_state st
         newMonkey->record_time = record_time;
         newMonkey->state = state;
         newMonkey->btAddress = address;
+        newMonkey->lastSeen = lastSeen;
         newMonkey->next = NULL;
 
         if (head_ref == NULL) {

@@ -28,12 +28,12 @@ struct Monkey {
     enum main_state state;
     struct Monkey * next;
     bt_addr_le_t btAddress;
-    
+    uint32_t lastSeen;
 };
 
 // Function prototypes
 void initMonkeyList();
-void appendOrModifyMonkey(int num, int rssi, int record_time, enum main_state state, bt_addr_le_t address);
+void appendOrModifyMonkey(int num, int rssi, int record_time, enum main_state state, bt_addr_le_t address, uint32_t lastSeen);
 void removeMonkey(int num);
 void printMonkeys();
 void getAllMonkeys(struct Monkey* monkeysArray);

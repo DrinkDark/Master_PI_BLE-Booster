@@ -12,6 +12,8 @@
 #include "task/ble.h"
 #include "task/monkeylist.h"
 
+K_HEAP_DEFINE(monkeyListHeap,32768);
+
 int main(void)
 {
 	#ifdef DEBUG_MODE
