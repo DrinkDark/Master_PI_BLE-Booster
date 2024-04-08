@@ -4,6 +4,7 @@
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/logging/log.h>
 
 #include "ble.h"
 #include "../define.h"
@@ -19,6 +20,8 @@
 
 K_THREAD_STACK_DEFINE(BLE_STACK, BLE_STACK_SIZE);
 static struct k_thread bleThread;
+
+LOG_MODULE_REGISTER(ble, LOG_LEVEL_DBG);
 
 //Function to initialize the ble thread
 void ble_thread_init(){
@@ -104,21 +107,31 @@ int ble_stop_scan(){
 void ble_device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type, struct net_buf_simple *ad){
     char addr_str[BT_ADDR_LE_STR_LEN];
     char name[NAME_LEN];
-    struct net_buf_simple *data = ad;
+    uint8_t manufacturerData[4];
+
+    struct net_buf_simple *data1 = malloc(sizeof(struct net_buf_simple));
+    struct net_buf_simple *data2 = malloc(sizeof(struct net_buf_simple));
+
+    memset(name, 0, NAME_LEN);
+    *data1 = *ad;
+    *data2 = *ad;
 
     // Process the received data to extract the useful information
-    bt_data_parse(data, data_cb, name);
+    bt_data_parse(data1, manufacturer_data_cb, manufacturerData);
+    bt_data_parse(data2, data_cb, name);
     bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
-
-    // TODO search for a service in the advertising data
-    // If the device is a device of interest, add it to the list
-    if((strstr(name, "Speak No Evil") || strstr(name, "A51 de Adrien"))!= NULL){
-        // TODO need to modify once the manufacturer data is correctly read
-        appendOrModifyMonkey(parse_device_name(name), rssi, 0, 0x02, *addr, k_uptime_get_32());
+    
+    // If the device is a device of interest (manufacturer = 0x5A02 = University of Applied Sciences Valais / 
+    // Haute Ecole Valaisanne), add it to the list or udpate if already exist
+    if(manufacturerData[0] == 0x5A && manufacturerData[1] == 0x02){
+        appendOrModifyMonkey(parse_device_name(name), rssi, manufacturerData[2], manufacturerData[3], *addr, k_uptime_get_32());
         #ifdef DEBUG_MODE
             printMonkeys();
         #endif 
-    }
+    }  
+
+    free(data1);
+    free(data2);
 }
 
 // Function to remove a device from the list if it has not been seen for a certain time (BLE_TIMEOUT)
@@ -158,6 +171,20 @@ bool data_cb(struct bt_data *data, void *user_data)
 	case BT_DATA_NAME_COMPLETE:
 		memcpy(name, data->data, MIN(data->data_len, NAME_LEN - 1));
         name[MIN(data->data_len, NAME_LEN - 1)] = '\0';
+        return false;
+	default:
+		return true;
+	}
+}
+
+// Function to parse the advertising data and extract the device name
+bool manufacturer_data_cb(struct bt_data *data, void *user_data)
+{
+	char *name = user_data;
+
+	switch (data->type) {
+    case BT_DATA_MANUFACTURER_DATA:
+		memcpy(name, data->data, MIN(data->data_len, 4));
 		return false;
 	default:
 		return true;
