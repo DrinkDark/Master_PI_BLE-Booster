@@ -23,6 +23,7 @@ static struct k_thread displayControllerThread;
 //selection variable
 int select = 0;
 int selectOffset = 0;
+bool popup = false;
 
 
 //number of monkeys
@@ -36,8 +37,6 @@ enum pages current_page = MAIN_PAGE;
 */
 void displayController() 
 {
-    
-
 	while(true)	// --------------------------------------------------------------------Thread infinite loop
 	{
         if(current_page == MAIN_PAGE)
@@ -202,6 +201,12 @@ void selectPressed()
     {
         connectDevice();
     }
+
+    if(current_page == DEVICE_PAGE)
+    {
+        display_show_popup();
+        popup=true;
+    }
 }
 
 //-----------------------------------------------------------------------------------------------------------------------
@@ -210,7 +215,32 @@ void selectPressed()
 */
 void triggerPressed()
 {
+    if(current_page == DEVICE_PAGE)
+    {
+        display_hide_popup();
+        popup=false;
+        if(select==0)
+        {
+            //open collar
+        }
+        if(select==1)
+        {
+            //reset collar
 
+        }
+        if(select==2)
+        {
+            //call function to toggle recording
+
+        }
+        if(select==3)
+        {
+            //call function to disconnect
+
+            select = 0;
+            display_main_page();
+        }
+    }
 }
 
 
