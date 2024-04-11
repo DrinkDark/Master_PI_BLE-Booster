@@ -32,6 +32,8 @@ void onDisconnected();
 void onConnectionFailed();
 void onUpdateInfos(struct Monkey monkey);
 
+void disablePopup();
+
 void Task_Display_Controller_Init(void);
 
 #endif /* DISPLAY_CONTROLLER_H_ */
