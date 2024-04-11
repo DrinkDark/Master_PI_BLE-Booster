@@ -6,6 +6,7 @@ LOG_MODULE_REGISTER(display_controller);
 #include <zephyr/kernel.h>
 
 #include "display_controller.h"
+#include "connection.h"
 
 
 //! Stack size for the DISPLAY_CONTROLLER thread
@@ -130,12 +131,11 @@ void connectDevice()
     struct Monkey monkey;
     getMonkeyAtIndex(&monkey,selectOffset+select);
     display_loading_page(monkey.num);
-    //call bluetooth callback function
-    current_page = LOADING_PAGE;
 
-    //TEST CODE
-    k_msleep(1000);
-    deviceConnected(monkey);
+    //call bluetooth function
+    connect(monkey);
+
+    current_page = LOADING_PAGE;
 }
 
 //-----------------------------------------------------------------------------------------------------------------------
@@ -147,6 +147,17 @@ void deviceConnected(struct Monkey monkey)
     display_device_page(monkey.num,monkey.rssi,monkey.record_time,monkey.state);
     select = 0;
     current_page = DEVICE_PAGE;
+}
+
+//-----------------------------------------------------------------------------------------------------------------------
+/*! deviceDisconnected
+* @brief deviceDisconnected is called by the BLE controller when device is connected
+*/
+void deviceDisconnected()
+{
+    display_main_page();
+    select = 0;
+    current_page = MAIN_PAGE;
 }
 
 //-----------------------------------------------------------------------------------------------------------------------
@@ -222,21 +233,23 @@ void triggerPressed()
         if(select==0)
         {
             //open collar
+            openCollar();
         }
         if(select==1)
         {
             //reset collar
+            resetCollar();
 
         }
         if(select==2)
         {
             //call function to toggle recording
-
+            toggleRecording();
         }
         if(select==3)
         {
             //call function to disconnect
-
+            disconnect();
             select = 0;
             display_main_page();
         }
@@ -249,7 +262,7 @@ void triggerPressed()
 */
 void onConnected(struct Monkey monkey)
 {
-
+    deviceConnected(monkey);
 }
 
 //-----------------------------------------------------------------------------------------------------------------------
@@ -258,7 +271,7 @@ void onConnected(struct Monkey monkey)
 */
 void onDisconnected()
 {
-
+    deviceDisconnected();
 }
 
 //-----------------------------------------------------------------------------------------------------------------------
@@ -267,7 +280,7 @@ void onDisconnected()
 */
 void onConnectionFailed()
 {
-
+    deviceDisconnected();
 }
 
 //-----------------------------------------------------------------------------------------------------------------------
@@ -276,12 +289,12 @@ void onConnectionFailed()
 */
 void onUpdateInfos(struct Monkey monkey)
 {
-
+    display_device_page(monkey.num,monkey.rssi,monkey.record_time,monkey.state);
 }
 
 
 //-----------------------------------------------------------------------------------------------------------------------
-/*! Task_UDP_Client_Init initializes the task UDP Client
+/*! init Display controller
 *
 * @brief 
 */

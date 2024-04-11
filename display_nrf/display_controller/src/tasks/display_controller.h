@@ -20,6 +20,7 @@ void updateDevicePage();
 
 void connectDevice();
 void deviceConnected(struct Monkey monkey);
+void deviceDisconnected();
 
 void downPressed();
 void upPressed();
