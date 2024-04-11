@@ -501,9 +501,23 @@ void display_show_popup()
         k_mutex_lock(&display_mutex, K_FOREVER);
 
         nextion_command("vis popup,1");
+        
+        nextion_command("popup.pic=12");
 
         k_mutex_unlock(&display_mutex);
 }
+
+void display_show_popup_highlighted()
+{
+        k_mutex_lock(&display_mutex, K_FOREVER);
+
+        nextion_command("vis popup,1");
+        
+        nextion_command("popup.pic=15");
+
+        k_mutex_unlock(&display_mutex);
+}
+
 void display_hide_popup()
 {
         k_mutex_lock(&display_mutex, K_FOREVER);

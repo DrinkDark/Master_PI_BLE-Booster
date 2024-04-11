@@ -56,21 +56,12 @@ void connect(struct Monkey monkey) {
     if (connectCallback != NULL) {
         connectCallback(monkey);
     }
-
-    //TEST CODE
-    k_msleep(1000);
-    connected(monkey);
-    //connectionFailed();
 }
 
 void disconnect() {
     if (disconnectCallback != NULL) {
         disconnectCallback();
     }
-
-    //TEST CODE
-    k_msleep(1000);
-    disconnected();
 }
 
 void toggleRecording() {

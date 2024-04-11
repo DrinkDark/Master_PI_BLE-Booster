@@ -36,6 +36,7 @@ void display_select_reset();
 void display_select_toggle();
 void display_select_exit();
 void display_show_popup();
+void display_show_popup_highlighted();
 void display_hide_popup();
 
 

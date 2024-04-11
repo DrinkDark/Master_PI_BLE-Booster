@@ -21,6 +21,7 @@ K_THREAD_STACK_DEFINE(DISPLAY_CONTROLLER_STACK, DISPLAY_CONTROLLER_STACK_SIZE);
 static struct k_thread displayControllerThread;
 
 static K_WORK_DELAYABLE_DEFINE(timeout_work, disablePopup);
+static K_WORK_DELAYABLE_DEFINE(popup_confirmation_work, display_hide_popup);
 
 
 //selection variable
@@ -157,8 +158,12 @@ void deviceConnected(struct Monkey monkey)
 */
 void disablePopup()
 {
-    display_hide_popup();
-    popup=false;
+    if(popup)
+    {
+        display_hide_popup();
+        popup=false;
+    }
+    
 }
 
 //-----------------------------------------------------------------------------------------------------------------------
@@ -188,7 +193,7 @@ void downPressed()
         return;
     }
 
-    if(current_page == DEVICE_PAGE)
+    if(current_page == DEVICE_PAGE && popup == false)
     {
         if(select<3)
             select++;
@@ -211,7 +216,7 @@ void upPressed()
         return;
     }
 
-    if(current_page == DEVICE_PAGE)
+    if(current_page == DEVICE_PAGE && popup == false)
     {
         if(select>0)
             select--;
@@ -257,8 +262,9 @@ void triggerPressed()
 {
     if(current_page == DEVICE_PAGE && popup == true)
     {
-        display_hide_popup();
         popup=false;
+        display_show_popup_highlighted();
+        k_work_reschedule(&popup_confirmation_work,K_MSEC(1000));
         if(select==0)
         {
             //open collar
