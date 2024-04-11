@@ -16,7 +16,7 @@
 #define BLE_SCAN_INTERVAL 2000
 
 #define NAME_LEN 30
-#define MANUFACTURER_LEN 4
+#define MANUFACTURER_DATA_LEN 4
 
 K_THREAD_STACK_DEFINE(BLE_STACK, BLE_STACK_SIZE);
 static struct k_thread bleThread;
@@ -107,12 +107,14 @@ int ble_stop_scan(){
 void ble_device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type, struct net_buf_simple *ad){
     char addr_str[BT_ADDR_LE_STR_LEN];
     char name[NAME_LEN];
-    uint8_t manufacturerData[4];
+    uint8_t manufacturerData[MANUFACTURER_DATA_LEN];
+
+    memset(name, 0, NAME_LEN);
+    memset(manufacturerData, 0, MANUFACTURER_DATA_LEN);
 
     struct net_buf_simple *data1 = malloc(sizeof(struct net_buf_simple));
     struct net_buf_simple *data2 = malloc(sizeof(struct net_buf_simple));
 
-    memset(name, 0, NAME_LEN);
     *data1 = *ad;
     *data2 = *ad;
 
@@ -128,6 +130,8 @@ void ble_device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type, struc
         #ifdef DEBUG_MODE
             printMonkeys();
         #endif 
+
+        printk("Adress : %s, manufacturer %x%x\n", addr_str, manufacturerData[0], manufacturerData[1]);
     }  
 
     free(data1);
