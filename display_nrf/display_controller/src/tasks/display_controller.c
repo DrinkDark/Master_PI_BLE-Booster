@@ -243,6 +243,41 @@ void triggerPressed()
     }
 }
 
+//-----------------------------------------------------------------------------------------------------------------------
+/*! onConnected
+* @brief onConnected callback called by the bluetooth connection
+*/
+void onConnected(struct Monkey monkey)
+{
+
+}
+
+//-----------------------------------------------------------------------------------------------------------------------
+/*! onDisconnected
+* @brief onDisconnected callback called by the bluetooth connection
+*/
+void onDisconnected()
+{
+
+}
+
+//-----------------------------------------------------------------------------------------------------------------------
+/*! onConnectionFailed
+* @brief onConnectionFailed callback called by the bluetooth connection
+*/
+void onConnectionFailed()
+{
+
+}
+
+//-----------------------------------------------------------------------------------------------------------------------
+/*! onUpdateInfos
+* @brief onUpdateInfos callback called by the bluetooth connection
+*/
+void onUpdateInfos(struct Monkey monkey)
+{
+
+}
 
 
 //-----------------------------------------------------------------------------------------------------------------------
@@ -254,6 +289,12 @@ void Task_Display_Controller_Init( void ){
     display_init();
     k_msleep(1000);
     display_main_page();
+
+    setConnectedCallback(onConnected);
+    setDisconnectedCallback(onDisconnected);
+    setConnectionFailedCallback(onConnectionFailed);
+    setUpdateInfosCallback(onUpdateInfos);
+
 	k_thread_create	(														\
 					&displayControllerThread,								\
 					DISPLAY_CONTROLLER_STACK,								\

@@ -26,6 +26,11 @@ void upPressed();
 void selectPressed();
 void triggerPressed();
 
+void onConnected(struct Monkey monkey);
+void onDisconnected();
+void onConnectionFailed();
+void onUpdateInfos(struct Monkey monkey);
+
 void Task_Display_Controller_Init(void);
 
 #endif /* DISPLAY_CONTROLLER_H_ */
