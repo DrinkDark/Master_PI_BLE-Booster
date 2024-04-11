@@ -1,18 +1,20 @@
 #include "connection.h"
 
 // Define callback function pointers
-static ConnectedCallback connectedCallback = NULL;
+static ConnectCallback connectCallback = NULL;
 static DisconnectCallback disconnectCallback = NULL;
 static RecordingToggleCallback recordingToggleCallback = NULL;
 static ResetCollarCallback resetCollarCallback = NULL;
 static OpenCollarCallback openCollarCallback = NULL;
+
+static ConnectedCallback connectedCallback = NULL;
 static ConnectionFailedCallback connectionFailedCallback = NULL;
 static UpdateInfosCallback updateInfosCallback = NULL;
 static DisconnectedCallback disconnectedCallback = NULL;
 
 // Set callback functions
-void setConnectedCallback(ConnectedCallback callback) {
-    connectedCallback = callback;
+void setConnectCallback(ConnectCallback callback) {
+    connectCallback = callback;
 }
 
 void setDisconnectCallback(DisconnectCallback callback) {
@@ -31,6 +33,12 @@ void setOpenCollarCallback(OpenCollarCallback callback) {
     openCollarCallback = callback;
 }
 
+
+
+void setConnectedCallback(ConnectedCallback callback) {
+    connectedCallback = callback;
+}
+
 void setConnectionFailedCallback(ConnectionFailedCallback callback) {
     connectionFailedCallback = callback;
 }
@@ -45,15 +53,24 @@ void setDisconnectedCallback(DisconnectedCallback callback) {
 
 // Methods implementation
 void connect(struct Monkey monkey) {
-    if (connectedCallback != NULL) {
-        connectedCallback(monkey);
+    if (connectCallback != NULL) {
+        connectCallback(monkey);
     }
+
+    //TEST CODE
+    k_msleep(1000);
+    connected(monkey);
+    //connectionFailed();
 }
 
 void disconnect() {
     if (disconnectCallback != NULL) {
         disconnectCallback();
     }
+
+    //TEST CODE
+    k_msleep(1000);
+    disconnected();
 }
 
 void toggleRecording() {
@@ -72,6 +89,14 @@ void openCollar() {
     if (openCollarCallback != NULL) {
         openCollarCallback();
     }
+}
+
+
+
+void connected(struct Monkey monkey) {
+    if (connectedCallback != NULL) {
+        connectedCallback(monkey);
+    }  
 }
 
 void connectionFailed() {
