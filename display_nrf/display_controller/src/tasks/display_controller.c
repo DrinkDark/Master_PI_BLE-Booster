@@ -20,6 +20,8 @@ K_THREAD_STACK_DEFINE(DISPLAY_CONTROLLER_STACK, DISPLAY_CONTROLLER_STACK_SIZE);
 //! Variable to identify the display controller thread
 static struct k_thread displayControllerThread;
 
+static K_WORK_DELAYABLE_DEFINE(timeout_work, disablePopup);
+
 
 //selection variable
 int select = 0;
@@ -132,10 +134,10 @@ void connectDevice()
     getMonkeyAtIndex(&monkey,selectOffset+select);
     display_loading_page(monkey.num);
 
+    current_page = LOADING_PAGE;
+
     //call bluetooth function
     connect(monkey);
-
-    current_page = LOADING_PAGE;
 }
 
 //-----------------------------------------------------------------------------------------------------------------------
@@ -147,6 +149,16 @@ void deviceConnected(struct Monkey monkey)
     display_device_page(monkey.num,monkey.rssi,monkey.record_time,monkey.state);
     select = 0;
     current_page = DEVICE_PAGE;
+}
+
+//-----------------------------------------------------------------------------------------------------------------------
+/*! disablePopup
+* @brief disablePopup after timeout
+*/
+void disablePopup()
+{
+    display_hide_popup();
+    popup=false;
 }
 
 //-----------------------------------------------------------------------------------------------------------------------
@@ -172,12 +184,15 @@ void downPressed()
             select++;
         else if(select == 2 && monkeyNbr-3-selectOffset>0)
             selectOffset++;
+        
+        return;
     }
 
     if(current_page == DEVICE_PAGE)
     {
         if(select<3)
             select++;
+        return;
     }
 }
 
@@ -193,12 +208,14 @@ void upPressed()
             select--;
         else if(selectOffset>0)
             selectOffset--;
+        return;
     }
 
     if(current_page == DEVICE_PAGE)
     {
         if(select>0)
             select--;
+        return;
     }
 }
 
@@ -211,12 +228,24 @@ void selectPressed()
     if(current_page == MAIN_PAGE)
     {
         connectDevice();
+        return;
     }
 
     if(current_page == DEVICE_PAGE)
     {
-        display_show_popup();
-        popup=true;
+        if(select==3)
+        {
+            //call function to disconnect
+            disconnect();
+            return;
+        }
+        else
+        {
+            display_show_popup();
+            popup=true;
+            k_work_reschedule(&timeout_work, K_SECONDS(3)); //timeout popup
+        }
+        return;
     }
 }
 
@@ -226,7 +255,7 @@ void selectPressed()
 */
 void triggerPressed()
 {
-    if(current_page == DEVICE_PAGE)
+    if(current_page == DEVICE_PAGE && popup == true)
     {
         display_hide_popup();
         popup=false;
@@ -234,24 +263,19 @@ void triggerPressed()
         {
             //open collar
             openCollar();
+            return;
         }
         if(select==1)
         {
             //reset collar
             resetCollar();
-
+            return;
         }
         if(select==2)
         {
             //call function to toggle recording
             toggleRecording();
-        }
-        if(select==3)
-        {
-            //call function to disconnect
-            disconnect();
-            select = 0;
-            display_main_page();
+            return;
         }
     }
 }
