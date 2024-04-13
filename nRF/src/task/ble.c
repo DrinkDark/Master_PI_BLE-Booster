@@ -9,7 +9,7 @@
 
 #include "ble.h"
 #include "../define.h"
-
+#include "connection.h"
 
 #define BLE_STACK_SIZE 2048
 #define BLE_PRIORITY 6
@@ -18,6 +18,12 @@
 
 #define NAME_LEN 30
 #define MANUFACTURER_DATA_LEN 4
+
+// Define callbacks for the BLE connection
+BT_CONN_CB_DEFINE(conn_callbacks) = {
+	.connected = ble_connected,
+	.disconnected = ble_disconnected,
+};
 
 K_THREAD_STACK_DEFINE(BLE_STACK, BLE_STACK_SIZE);
 static struct k_thread bleThread;
@@ -47,6 +53,12 @@ void ble_thread_init(){
     printk("ble_thread_init\n");
     #endif
 
+    setConnectCallback(ble_connect);
+    setDisconnectCallback(ble_disconnect);
+    setRecordingToggleCallback(ble_toggle_recording);
+    setResetCollarCallback(ble_reset_collar);
+    setOpenCollarCallback(ble_open_collar);
+    
     connectedDevice = NULL;
     connectedMonkey = (struct Monkey){0};
 }
@@ -212,7 +224,7 @@ void ble_connect(struct Monkey monkey){
         #ifdef DEBUG_MODE
             printk("%s: Stop LE scan failed (err %d)\n", __func__, err);
         #endif  
-        //connectionFailed();
+        connectionFailed();
 		return;
 	}
 
@@ -223,7 +235,7 @@ void ble_connect(struct Monkey monkey){
         #ifdef DEBUG_MODE
             printk("%s: Create conn failed (err %d)\n", __func__, err);
         #endif  
-        //connectionFailed();
+        connectionFailed();
 		ble_start_scan();
         return;
 	} 
@@ -251,7 +263,7 @@ void ble_connected(struct bt_conn *conn, uint8_t err)
 		connectedDevice = NULL;
         connectedMonkey = (struct Monkey){0};
 
-        //connectionFailed();
+        connectionFailed();
 
 		ble_start_scan();
 		return;
@@ -261,7 +273,7 @@ void ble_connected(struct bt_conn *conn, uint8_t err)
         printk("Connected to monkey %d\n", connectedMonkey.num);
     #endif
 
-    //connected();
+    connected(connectedMonkey);
 }
 
 // Function to disconnect from a specific device
@@ -288,17 +300,28 @@ void ble_disconnected(struct bt_conn *conn, uint8_t reason)
 	connectedDevice = NULL;
     connectedMonkey = (struct Monkey){0};
 
-    //disconnected();
+    disconnected();
 
 	ble_start_scan();
 }
 
-BT_CONN_CB_DEFINE(conn_callbacks) = {
-	.connected = ble_connected,
-	.disconnected = ble_disconnected,
-};
 
 // Function to send data to a specific device
 void ble_send_data(uint8_t *data, uint16_t len){
+
+}
+
+// Function to open the collar
+void ble_open_collar(void) {
+
+}
+
+// Function to reset the collar
+void ble_reset_collar(void){
+
+}
+
+// Function to toggle the recording
+void ble_toggle_recording(void){
 
 }
