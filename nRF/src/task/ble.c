@@ -5,10 +5,11 @@
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/logging/log.h>
+#include <stdlib.h>
 
 #include "ble.h"
 #include "../define.h"
-#include "monkeylist.h"
+
 
 #define BLE_STACK_SIZE 2048
 #define BLE_PRIORITY 6
@@ -22,6 +23,9 @@ K_THREAD_STACK_DEFINE(BLE_STACK, BLE_STACK_SIZE);
 static struct k_thread bleThread;
 
 LOG_MODULE_REGISTER(ble, LOG_LEVEL_DBG);
+
+struct bt_conn *connectedDevice;
+struct Monkey connectedMonkey;
 
 //Function to initialize the ble thread
 void ble_thread_init(){
@@ -42,6 +46,9 @@ void ble_thread_init(){
     #ifdef DEBUG_MODE
     printk("ble_thread_init\n");
     #endif
+
+    connectedDevice = NULL;
+    connectedMonkey = (struct Monkey){0};
 }
 
 // Funtion to start the ble controller
@@ -119,19 +126,22 @@ void ble_device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type, struc
     *data2 = *ad;
 
     // Process the received data to extract the useful information
-    bt_data_parse(data1, manufacturer_data_cb, manufacturerData);
-    bt_data_parse(data2, data_cb, name);
+    bt_data_parse(data1, ble_manufacturer_data_cb, manufacturerData);
+    bt_data_parse(data2, ble_data_cb, name);
     bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
     
     // If the device is a device of interest (manufacturer = 0x5A02 = University of Applied Sciences Valais / 
     // Haute Ecole Valaisanne), add it to the list or udpate if already exist
     if(manufacturerData[0] == 0x5A && manufacturerData[1] == 0x02){
-        appendOrModifyMonkey(parse_device_name(name), rssi, manufacturerData[2], manufacturerData[3], *addr, k_uptime_get_32());
+        appendOrModifyMonkey(ble_parse_device_name(name), rssi, manufacturerData[2], manufacturerData[3], *addr, k_uptime_get_32());
         #ifdef DEBUG_MODE
             printMonkeys();
         #endif 
 
-        printk("Adress : %s, manufacturer %x%x\n", addr_str, manufacturerData[0], manufacturerData[1]);
+        struct Monkey monkey;
+        getMonkeyByID(&monkey,ble_parse_device_name(name));
+
+        ble_connect(monkey);
     }  
 
     free(data1);
@@ -159,14 +169,14 @@ void ble_remove_device(){
 }
 
 // Function to parse the device name and extract the device number
-int parse_device_name(char* name) {
+int ble_parse_device_name(char* name) {
     int value = 0;
     sscanf(name, "%*[^0-9]%d", &value);
     return value;
 }
 
 // Function to parse the advertising data and extract the device name
-bool data_cb(struct bt_data *data, void *user_data)
+bool ble_data_cb(struct bt_data *data, void *user_data)
 {
 	char *name = user_data;
 
@@ -182,7 +192,7 @@ bool data_cb(struct bt_data *data, void *user_data)
 }
 
 // Function to parse the advertising data and extract the device name
-bool manufacturer_data_cb(struct bt_data *data, void *user_data)
+bool ble_manufacturer_data_cb(struct bt_data *data, void *user_data)
 {
 	char *name = user_data;
 
@@ -196,14 +206,97 @@ bool manufacturer_data_cb(struct bt_data *data, void *user_data)
 }
 
 // Function to connect to a specific device
-void ble_connect(void){
+void ble_connect(struct Monkey monkey){
+    int err = ble_stop_scan();
+	if (err) {
+        #ifdef DEBUG_MODE
+            printk("%s: Stop LE scan failed (err %d)\n", __func__, err);
+        #endif  
+        //connectionFailed();
+		return;
+	}
 
+    err = bt_conn_le_create((const bt_addr_le_t*) &monkey.btAddress, BT_CONN_LE_CREATE_CONN,
+				        BT_LE_CONN_PARAM_DEFAULT, &connectedDevice);
+
+	if (err) {
+        #ifdef DEBUG_MODE
+            printk("%s: Create conn failed (err %d)\n", __func__, err);
+        #endif  
+        //connectionFailed();
+		ble_start_scan();
+        return;
+	} 
+    connectedMonkey = monkey;
+
+    #ifdef DEBUG_MODE
+        printk("Connecting to Monkey %d\n", connectedMonkey.num);
+    #endif
+}
+
+// Function called when a device is connected
+void ble_connected(struct bt_conn *conn, uint8_t err)
+{
+    char addr[BT_ADDR_LE_STR_LEN];
+    bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+
+    if(conn != connectedDevice){
+        return;
+    }
+
+    if (err != 0) {
+		printk("Failed to connect to %s (%u)\n", addr, err);
+
+		bt_conn_unref(connectedDevice);
+		connectedDevice = NULL;
+        connectedMonkey = (struct Monkey){0};
+
+        //connectionFailed();
+
+		ble_start_scan();
+		return;
+	}
+
+    #ifdef DEBUG_MODE
+        printk("Connected to monkey %d\n", connectedMonkey.num);
+    #endif
+
+    //connected();
 }
 
 // Function to disconnect from a specific device
 void ble_disconnect(void){
-
+    bt_conn_disconnect(connectedDevice, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 }
+
+// Function called when a device is disconnected
+void ble_disconnected(struct bt_conn *conn, uint8_t reason)
+{
+    char addr[BT_ADDR_LE_STR_LEN];
+    bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+
+	if (conn != connectedDevice) {
+		return;
+	}
+
+    #ifdef DEBUG_MODE
+        printk("Disconnected from monkey %d, reason 0x%x\n", connectedMonkey.num, reason);
+    #endif
+	
+	bt_conn_unref(connectedDevice);
+
+	connectedDevice = NULL;
+    connectedMonkey = (struct Monkey){0};
+
+    //disconnected();
+
+	ble_start_scan();
+}
+
+BT_CONN_CB_DEFINE(conn_callbacks) = {
+	.connected = ble_connected,
+	.disconnected = ble_disconnected,
+};
 
 // Function to send data to a specific device
 void ble_send_data(uint8_t *data, uint16_t len){
