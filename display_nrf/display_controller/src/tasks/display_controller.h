@@ -20,11 +20,19 @@ void updateDevicePage();
 
 void connectDevice();
 void deviceConnected(struct Monkey monkey);
+void deviceDisconnected();
 
 void downPressed();
 void upPressed();
 void selectPressed();
 void triggerPressed();
+
+void onConnected(struct Monkey monkey);
+void onDisconnected();
+void onConnectionFailed();
+void onUpdateInfos(struct Monkey monkey);
+
+void disablePopup();
 
 void Task_Display_Controller_Init(void);
 

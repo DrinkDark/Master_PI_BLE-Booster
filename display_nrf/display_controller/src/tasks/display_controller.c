@@ -6,6 +6,7 @@ LOG_MODULE_REGISTER(display_controller);
 #include <zephyr/kernel.h>
 
 #include "display_controller.h"
+#include "connection.h"
 
 
 //! Stack size for the DISPLAY_CONTROLLER thread
@@ -19,10 +20,14 @@ K_THREAD_STACK_DEFINE(DISPLAY_CONTROLLER_STACK, DISPLAY_CONTROLLER_STACK_SIZE);
 //! Variable to identify the display controller thread
 static struct k_thread displayControllerThread;
 
+static K_WORK_DELAYABLE_DEFINE(timeout_work, disablePopup);
+static K_WORK_DELAYABLE_DEFINE(popup_confirmation_work, display_hide_popup);
+
 
 //selection variable
 int select = 0;
 int selectOffset = 0;
+bool popup = false;
 
 
 //number of monkeys
@@ -36,8 +41,6 @@ enum pages current_page = MAIN_PAGE;
 */
 void displayController() 
 {
-    
-
 	while(true)	// --------------------------------------------------------------------Thread infinite loop
 	{
         if(current_page == MAIN_PAGE)
@@ -131,12 +134,11 @@ void connectDevice()
     struct Monkey monkey;
     getMonkeyAtIndex(&monkey,selectOffset+select);
     display_loading_page(monkey.num);
-    //call bluetooth callback function
+
     current_page = LOADING_PAGE;
 
-    //TEST CODE
-    k_msleep(1000);
-    deviceConnected(monkey);
+    //call bluetooth function
+    connect(monkey);
 }
 
 //-----------------------------------------------------------------------------------------------------------------------
@@ -151,6 +153,31 @@ void deviceConnected(struct Monkey monkey)
 }
 
 //-----------------------------------------------------------------------------------------------------------------------
+/*! disablePopup
+* @brief disablePopup after timeout
+*/
+void disablePopup()
+{
+    if(popup)
+    {
+        display_hide_popup();
+        popup=false;
+    }
+    
+}
+
+//-----------------------------------------------------------------------------------------------------------------------
+/*! deviceDisconnected
+* @brief deviceDisconnected is called by the BLE controller when device is connected
+*/
+void deviceDisconnected()
+{
+    display_main_page();
+    select = 0;
+    current_page = MAIN_PAGE;
+}
+
+//-----------------------------------------------------------------------------------------------------------------------
 /*! downPressed
 * @brief downPressed is called by the button mangager
 */
@@ -162,12 +189,15 @@ void downPressed()
             select++;
         else if(select == 2 && monkeyNbr-3-selectOffset>0)
             selectOffset++;
+        
+        return;
     }
 
-    if(current_page == DEVICE_PAGE)
+    if(current_page == DEVICE_PAGE && popup == false)
     {
         if(select<3)
             select++;
+        return;
     }
 }
 
@@ -183,12 +213,14 @@ void upPressed()
             select--;
         else if(selectOffset>0)
             selectOffset--;
+        return;
     }
 
-    if(current_page == DEVICE_PAGE)
+    if(current_page == DEVICE_PAGE && popup == false)
     {
         if(select>0)
             select--;
+        return;
     }
 }
 
@@ -201,6 +233,24 @@ void selectPressed()
     if(current_page == MAIN_PAGE)
     {
         connectDevice();
+        return;
+    }
+
+    if(current_page == DEVICE_PAGE)
+    {
+        if(select==3)
+        {
+            //call function to disconnect
+            disconnect();
+            return;
+        }
+        else
+        {
+            display_show_popup();
+            popup=true;
+            k_work_reschedule(&timeout_work, K_SECONDS(3)); //timeout popup
+        }
+        return;
     }
 }
 
@@ -210,13 +260,71 @@ void selectPressed()
 */
 void triggerPressed()
 {
+    if(current_page == DEVICE_PAGE && popup == true)
+    {
+        popup=false;
+        display_show_popup_highlighted();
+        k_work_reschedule(&popup_confirmation_work,K_MSEC(1000));
+        if(select==0)
+        {
+            //open collar
+            openCollar();
+            return;
+        }
+        if(select==1)
+        {
+            //reset collar
+            resetCollar();
+            return;
+        }
+        if(select==2)
+        {
+            //call function to toggle recording
+            toggleRecording();
+            return;
+        }
+    }
+}
 
+//-----------------------------------------------------------------------------------------------------------------------
+/*! onConnected
+* @brief onConnected callback called by the bluetooth connection
+*/
+void onConnected(struct Monkey monkey)
+{
+    deviceConnected(monkey);
+}
+
+//-----------------------------------------------------------------------------------------------------------------------
+/*! onDisconnected
+* @brief onDisconnected callback called by the bluetooth connection
+*/
+void onDisconnected()
+{
+    deviceDisconnected();
+}
+
+//-----------------------------------------------------------------------------------------------------------------------
+/*! onConnectionFailed
+* @brief onConnectionFailed callback called by the bluetooth connection
+*/
+void onConnectionFailed()
+{
+    deviceDisconnected();
+}
+
+//-----------------------------------------------------------------------------------------------------------------------
+/*! onUpdateInfos
+* @brief onUpdateInfos callback called by the bluetooth connection
+*/
+void onUpdateInfos(struct Monkey monkey)
+{
+    display_device_page(monkey.num,monkey.rssi,monkey.record_time,monkey.state);
 }
 
 
-
 //-----------------------------------------------------------------------------------------------------------------------
-/*! Task_UDP_Client_Init initializes the task UDP Client
+/*! init Display controller
 *
 * @brief 
 */
@@ -224,6 +332,12 @@ void Task_Display_Controller_Init( void ){
     display_init();
     k_msleep(1000);
     display_main_page();
+
+    setConnectedCallback(onConnected);
+    setDisconnectedCallback(onDisconnected);
+    setConnectionFailedCallback(onConnectionFailed);
+    setUpdateInfosCallback(onUpdateInfos);
+
 	k_thread_create	(														\
 					&displayControllerThread,								\
 					DISPLAY_CONTROLLER_STACK,								\

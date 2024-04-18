@@ -39,6 +39,15 @@ void display_main_page()
         k_mutex_lock(&display_mutex, K_FOREVER);
         nextion_command("page 1");
         k_mutex_unlock(&display_mutex);
+
+        //reset display_device functions static variables
+        display_device_1(-1,-1,-1,ST_INIT,false);
+        display_device_1(-1,-1,-1,ST_INIT,false);
+        display_device_1(-1,-1,-1,ST_INIT,false);
+        k_msleep(100);
+        hide_device_1();
+        hide_device_2();
+        hide_device_3();
 }
 
 void display_device_1(int deviceNbr, int rssi, int nbrDays, enum main_state state, bool selected)
@@ -492,9 +501,23 @@ void display_show_popup()
         k_mutex_lock(&display_mutex, K_FOREVER);
 
         nextion_command("vis popup,1");
+        
+        nextion_command("popup.pic=12");
 
         k_mutex_unlock(&display_mutex);
 }
+
+void display_show_popup_highlighted()
+{
+        k_mutex_lock(&display_mutex, K_FOREVER);
+
+        nextion_command("vis popup,1");
+        
+        nextion_command("popup.pic=15");
+
+        k_mutex_unlock(&display_mutex);
+}
+
 void display_hide_popup()
 {
         k_mutex_lock(&display_mutex, K_FOREVER);

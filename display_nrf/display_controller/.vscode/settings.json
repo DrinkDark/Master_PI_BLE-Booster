@@ -11,5 +11,6 @@
         "monkeylist.h": "c",
         "display_controller.h": "c",
         "ratio": "c"
-    }
+    },
+    "C_Cpp.errorSquiggles": "disabled"
 }
