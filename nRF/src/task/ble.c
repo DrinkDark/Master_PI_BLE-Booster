@@ -97,52 +97,6 @@ void ble_controller(struct k_work *work){
 
     while (true)
     {   
-        switch (current_state) {
-            case STATE_INIT:
-                err = ble_init();
-                if(err){
-                    return;
-                }
-                break;
-
-            case STATE_SCANNING:
-                err = ble_start_scan();
-                if(err){
-                    return;
-                }
-                break;
-
-            case STATE_CONNECTING:
-                break;
-
-            case STATE_CONNECTED:
-                ble_discover_service();
-                break;
-
-            case STATE_DISCOVER_CHARACTERISTIC:
-                break;
-
-            case STATE_WAIT:
-                break;
-
-            case STATE_RELEASE:
-                break;
-
-            case STATE_RESET:
-                break;
-
-            case STATE_TOGGLE_RECORDING:
-                break;
-
-            case STATE_DISCONNECTING:
-                ble_disconnect();
-                break;
-
-            default:
-                printk("Unknown state encountered!\n");
-                break;
-        }
-
         uint32_t ev = k_event_wait(&event, 0xFFF, false, K_FOREVER);
         switch (current_state) {
             case STATE_INIT:
@@ -201,6 +155,52 @@ void ble_controller(struct k_work *work){
             default:
                 printk("Unknown state encountered!\n");
                 current_state = STATE_SCANNING;
+                break;
+        }
+
+        switch (current_state) {
+            case STATE_INIT:
+                err = ble_init();
+                if(err != 1){
+                    return;
+                }
+                break;
+
+            case STATE_SCANNING:
+                err = ble_start_scan();
+                if(err != 1){
+                    return;
+                }
+                break;
+
+            case STATE_CONNECTING:
+                break;
+
+            case STATE_CONNECTED:
+                ble_discover_service();
+                break;
+
+            case STATE_DISCOVER_CHARACTERISTIC:
+                break;
+
+            case STATE_WAIT:
+                break;
+
+            case STATE_RELEASE:
+                break;
+
+            case STATE_RESET:
+                break;
+
+            case STATE_TOGGLE_RECORDING:
+                break;
+
+            case STATE_DISCONNECTING:
+                ble_disconnect();
+                break;
+
+            default:
+                printk("Unknown state encountered!\n");
                 break;
         }
     }
@@ -269,8 +269,6 @@ void ble_device_found_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_t type, st
             printMonkeys();
         #endif 
 
-        struct Monkey monkey;
-        getMonkeyByID(&monkey,ble_parse_device_name(name));
     }  
 
     free(data1);
