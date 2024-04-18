@@ -11,18 +11,14 @@
 #include "../define.h"
 #include "connection.h"
 
-#define BLE_STACK_SIZE 2048
-#define BLE_PRIORITY 6
-#define BLE_TIMEOUT 10000
-#define BLE_SCAN_INTERVAL 2000
-
-#define NAME_LEN 30
-#define MANUFACTURER_DATA_LEN 4
+K_EVENT_DEFINE(event);
 
 // Define callbacks for the BLE connection
 BT_CONN_CB_DEFINE(conn_callbacks) = {
-	.connected = ble_connected,
-	.disconnected = ble_disconnected,
+	.connected = ble_connected_cb,
+	.disconnected = ble_disconnected_cb,
+    .le_param_updated = ble_param_updated_cb,
+    .le_param_req = ble_param_request_cb
 };
 
 K_THREAD_STACK_DEFINE(BLE_STACK, BLE_STACK_SIZE);
@@ -30,8 +26,16 @@ static struct k_thread bleThread;
 
 LOG_MODULE_REGISTER(ble, LOG_LEVEL_DBG);
 
+struct k_work work;
+
 struct bt_conn *connectedDevice;
 struct Monkey connectedMonkey;
+uint16_t monkey_handle;
+
+int current_state = STATE_INIT;
+
+struct bt_uuid_128 monkey_src_UUID = BT_UUID_INIT_128(BT_UUID_SNES_VAL);
+struct bt_uuid_128 monkey_cmd_UUID = BT_UUID_INIT_128(BT_UUID_SNES_CMD_VAL);
 
 //Function to initialize the ble thread
 void ble_thread_init(){
@@ -53,6 +57,12 @@ void ble_thread_init(){
     printk("ble_thread_init\n");
     #endif
 
+    k_work_init(&work, ble_controller);
+
+    k_event_set(&event, BLE_EV_DEFAULT);
+}
+
+int ble_init(void){
     setConnectCallback(ble_connect);
     setDisconnectCallback(ble_disconnect);
     setRecordingToggleCallback(ble_toggle_recording);
@@ -61,29 +71,138 @@ void ble_thread_init(){
     
     connectedDevice = NULL;
     connectedMonkey = (struct Monkey){0};
-}
 
-// Funtion to start the ble controller
-void ble_controller(){
-    int err;
+    int err = bt_enable(NULL);
 
-	err = bt_enable(NULL);
-	if (err) {
+    if (err) {
         #ifdef DEBUG_MODE
-		    printk("Bluetooth init failed (err %d)\n", err);
+            printk("Bluetooth init failed (err %d)\n", err);
         #endif
-		return;
-	}
+        return 0;
+    }
 
     #ifdef DEBUG_MODE
         printk("Bluetooth initialized\n");
     #endif
 
-    // Start the ble scan and wait until the end of the program
-    ble_start_scan();
+    k_event_set(&event, BLE_EV_SCAN);
+
+    return 1;
+}
+
+// Funtion to start the ble controller
+void ble_controller(struct k_work *work){
+    int ret;
+    int err;
+
     while (true)
-    {
-        
+    {   
+        switch (current_state) {
+            case STATE_INIT:
+                err = ble_init();
+                if(err){
+                    return;
+                }
+                break;
+
+            case STATE_SCANNING:
+                err = ble_start_scan();
+                if(err){
+                    return;
+                }
+                break;
+
+            case STATE_CONNECTING:
+                break;
+
+            case STATE_CONNECTED:
+                ble_discover_service();
+                break;
+
+            case STATE_DISCOVER_CHARACTERISTIC:
+                break;
+
+            case STATE_WAIT:
+                break;
+
+            case STATE_RELEASE:
+                break;
+
+            case STATE_RESET:
+                break;
+
+            case STATE_TOGGLE_RECORDING:
+                break;
+
+            case STATE_DISCONNECTING:
+                ble_disconnect();
+                break;
+
+            default:
+                printk("Unknown state encountered!\n");
+                break;
+        }
+
+        uint32_t ev = k_event_wait(&event, 0xFFF, false, K_FOREVER);
+        switch (current_state) {
+            case STATE_INIT:
+                if (ev == BLE_EV_SCAN) {
+                    current_state = STATE_SCANNING;
+                }                
+                break;
+
+            case STATE_SCANNING:
+                if (ev == BLE_EV_CONNECTING){
+                    current_state = STATE_CONNECTING;
+                }
+                break;
+
+            case STATE_CONNECTING:
+                if (ev == BLE_EV_CONNECTED) {
+                    current_state = STATE_CONNECTED;
+                }
+                break;
+
+            case STATE_CONNECTED:
+                if (ev == BLE_EV_DISCOVER_CHARA){
+                    current_state = STATE_DISCOVER_CHARACTERISTIC;
+                }
+                break;
+
+            case STATE_DISCOVER_CHARACTERISTIC:
+                if(ev == BLE_EV_CHARA_DISCOVERED){
+                    current_state = STATE_WAIT;
+                }
+                break;
+            case STATE_WAIT:
+                if(ev == BLE_EV_RELEASE){
+                    current_state = STATE_RELEASE;
+                } else if(ev == BLE_EV_RESET){
+                    current_state = STATE_RESET;
+                } else if(ev == BLE_EV_TOGGLE_RECORDING){
+                    current_state = STATE_TOGGLE_RECORDING;
+                } else if (ev == BLE_EV_DISCONNECT){
+                    current_state = STATE_DISCONNECTING;
+                }
+                break;
+            case STATE_RELEASE:
+            case STATE_RESET:
+            case STATE_TOGGLE_RECORDING:
+                if(ev == BLE_EV_DEFAULT){
+                    current_state = STATE_WAIT;
+                }
+                break;
+            case STATE_DISCONNECTING:
+                if(ev == BLE_EV_DISCONNECTED){
+                    current_state = STATE_SCANNING;
+                }
+                break;
+
+            default:
+                printk("Unknown state encountered!\n");
+                current_state = STATE_SCANNING;
+                break;
+        }
     }
 }
 
@@ -91,7 +210,7 @@ void ble_controller(){
 int ble_start_scan(){
     int err;
 
-	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, ble_device_found);
+	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, ble_device_found_cb);
 	if (err) {
         #ifdef DEBUG_MODE
             printk("ble_start_scan failed (err %d)\n", err);
@@ -123,7 +242,7 @@ int ble_stop_scan(){
 }
 
 // Function called when a device is found. It will parse the advertising data to find the device name and the manufacturer data
-void ble_device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type, struct net_buf_simple *ad){
+void ble_device_found_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_t type, struct net_buf_simple *ad){
     char addr_str[BT_ADDR_LE_STR_LEN];
     char name[NAME_LEN];
     uint8_t manufacturerData[MANUFACTURER_DATA_LEN];
@@ -152,8 +271,6 @@ void ble_device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type, struc
 
         struct Monkey monkey;
         getMonkeyByID(&monkey,ble_parse_device_name(name));
-
-        ble_connect(monkey);
     }  
 
     free(data1);
@@ -219,7 +336,10 @@ bool ble_manufacturer_data_cb(struct bt_data *data, void *user_data)
 
 // Function to connect to a specific device
 void ble_connect(struct Monkey monkey){
+    struct bt_conn* conn;
     int err = ble_stop_scan();
+    k_event_set(&event, BLE_EV_CONNECTING);
+
 	if (err) {
         #ifdef DEBUG_MODE
             printk("%s: Stop LE scan failed (err %d)\n", __func__, err);
@@ -229,7 +349,7 @@ void ble_connect(struct Monkey monkey){
 	}
 
     err = bt_conn_le_create((const bt_addr_le_t*) &monkey.btAddress, BT_CONN_LE_CREATE_CONN,
-				        BT_LE_CONN_PARAM_DEFAULT, &connectedDevice);
+				        BT_LE_CONN_PARAM_DEFAULT, &conn);
 
 	if (err) {
         #ifdef DEBUG_MODE
@@ -238,8 +358,13 @@ void ble_connect(struct Monkey monkey){
         connectionFailed();
 		ble_start_scan();
         return;
-	} 
+	} else {
+        connectedDevice = bt_conn_ref(conn);
+        bt_conn_unref(conn);
+    }
     connectedMonkey = monkey;
+
+    k_event_set(&event, BLE_EV_CONNECTING);
 
     #ifdef DEBUG_MODE
         printk("Connecting to Monkey %d\n", connectedMonkey.num);
@@ -247,7 +372,7 @@ void ble_connect(struct Monkey monkey){
 }
 
 // Function called when a device is connected
-void ble_connected(struct bt_conn *conn, uint8_t err)
+void ble_connected_cb(struct bt_conn *conn, uint8_t err)
 {
     char addr[BT_ADDR_LE_STR_LEN];
     bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
@@ -265,8 +390,17 @@ void ble_connected(struct bt_conn *conn, uint8_t err)
 
         connectionFailed();
 
-		ble_start_scan();
+		k_event_set(&event, BLE_EV_SCAN);
+
 		return;
+	}
+
+    static struct bt_gatt_exchange_params exchange_params;
+
+	exchange_params.func = ble_exchange_func;
+	err = bt_gatt_exchange_mtu(conn, &exchange_params);
+	if (err) {
+		LOG_WRN("MTU exchange failed (err %d)\n", err);
 	}
 
     #ifdef DEBUG_MODE
@@ -274,6 +408,17 @@ void ble_connected(struct bt_conn *conn, uint8_t err)
     #endif
 
     connected(connectedMonkey);
+
+    k_event_set(&event, BLE_EV_CONNECTED);
+}
+
+void ble_exchange_func(struct bt_conn *conn, uint8_t err, struct bt_gatt_exchange_params *params)
+{
+	if (!err) {
+		printk("MTU exchange done\n");
+	} else {
+		printk("MTU exchange failed (err %" PRIu8 ")", err);
+	}
 }
 
 // Function to disconnect from a specific device
@@ -282,7 +427,7 @@ void ble_disconnect(void){
 }
 
 // Function called when a device is disconnected
-void ble_disconnected(struct bt_conn *conn, uint8_t reason)
+void ble_disconnected_cb(struct bt_conn *conn, uint8_t reason)
 {
     char addr[BT_ADDR_LE_STR_LEN];
     bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
@@ -301,27 +446,98 @@ void ble_disconnected(struct bt_conn *conn, uint8_t reason)
     connectedMonkey = (struct Monkey){0};
 
     disconnected();
-
 	ble_start_scan();
+    k_event_set(&event, BLE_EV_SCAN);
 }
 
+bool ble_param_request_cb(struct bt_conn *conn, struct bt_le_conn_param *param){
+    #ifdef DEBUG_MODE
+        printk("Connection parameters update request. min: %d, max: %d, latency: %d, tmieout: %d\n", param->interval_min, param->interval_max, param->latency, param->timeout); 
+    #endif
+
+    int ret = bt_conn_le_param_update(conn, param);
+    return (ret == 0);
+}
+
+void ble_param_updated_cb(struct bt_conn *conn, uint16_t interval, uint16_t latency, uint16_t timeout){
+    #ifdef DEBUG_MODE
+        printk("Connection parameters updated. interval: %d, latency: %d, timeout: %d\n", interval, latency, timeout);
+    #endif
+
+}
+
+void ble_discover_service() {
+    int err;
+    struct bt_gatt_discover_params discover_params;
+
+    discover_params.uuid = &monkey_src_UUID.uuid;
+    discover_params.func = ble_service_discovered_cb;
+    discover_params.start_handle = BT_ATT_FIRST_ATTRIBUTE_HANDLE;
+    discover_params.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
+    discover_params.type = BT_GATT_DISCOVER_CHARACTERISTIC;
+
+    #ifdef DEBUG_MODE
+        printk("Discover service started\n");
+    #endif
+
+    err = bt_gatt_discover(connectedDevice, &discover_params);
+    if (err) {
+        #ifdef DEBUG_MODE
+            printk("Discover service failed (err %d)\n", err);
+        #endif
+    }
+}
+
+uint8_t ble_service_discovered_cb(struct bt_conn *conn, 
+                            const struct bt_gatt_attr *attr,
+                            struct bt_gatt_discover_params *params){
+    monkey_handle = bt_gatt_attr_value_handle(attr);
+    printk("Monkey value handle %u\n", monkey_handle);
+
+     k_event_set(&event, BLE_EV_CHARA_DISCOVERED);
+    return BT_GATT_ITER_CONTINUE; 
+}
 
 // Function to send data to a specific device
-void ble_send_data(uint8_t *data, uint16_t len){
+void ble_write_data(uint8_t *data, uint16_t len){
+    int err = bt_gatt_write_without_response_cb(connectedDevice, monkey_handle, data, len,
+						false, ble_data_written_cb,
+						(void *)((uint32_t)len));
+    if(err){
+        #ifdef DEBUG_MODE
+            printk("Write data failed (err %d)\n", err);
+        #endif
+        return;
+    }
+    #ifdef DEBUG_MODE
+        printk("Write data : %s\n", data);
+    #endif
+}
 
+// Function called when the data has been written
+void ble_data_written_cb(){
+    #ifdef DEBUG_MODE
+        printk("Data written\n");
+    #endif
 }
 
 // Function to open the collar
 void ble_open_collar(void) {
+    k_event_set(&event, BLE_EV_RELEASE);
 
+    //k_event_set(&event, BLE_EV_DEFAULT);
 }
 
 // Function to reset the collar
 void ble_reset_collar(void){
+    k_event_set(&event, BLE_EV_RESET);
 
+    //k_event_set(&event, BLE_EV_DEFAULT);
 }
 
 // Function to toggle the recording
 void ble_toggle_recording(void){
+    k_event_set(&event, BLE_EV_TOGGLE_RECORDING);
 
+    //k_event_set(&event, BLE_EV_DEFAULT);
 }

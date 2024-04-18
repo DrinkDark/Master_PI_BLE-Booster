@@ -5,27 +5,102 @@
 #include <zephyr/bluetooth/addr.h>
 #include "monkeylist.h"
 
+#define BLE_STACK_SIZE 2048
+#define BLE_PRIORITY 6
+#define BLE_TIMEOUT 10000
+#define BLE_SCAN_INTERVAL 2000
+
+#define NAME_LEN 30
+#define MANUFACTURER_DATA_LEN 4
+
+enum {
+  BLE_EV_SCAN = BIT(1),
+  BLE_EV_CONNECTING = BIT(2),
+  BLE_EV_CONNECTED = BIT(3),
+  BLE_EV_DISCOVER_CHARA = BIT(4),
+  BLE_EV_CHARA_DISCOVERED = BIT(5),
+  BLE_EV_WAIT = BIT(6),
+  BLE_EV_RELEASE= BIT(7),
+  BLE_EV_RESET = BIT(8),
+  BLE_EV_TOGGLE_RECORDING = BIT(9),
+  BLE_EV_DISCONNECT = BIT(10),
+  BLE_EV_DISCONNECTED = BIT(11),
+  BLE_EV_DEFAULT = BIT(12),
+};
+
+
+/* Define states */
+enum {
+    STATE_INIT,
+    STATE_SCANNING,
+    STATE_CONNECTING,
+    STATE_CONNECTED,
+    STATE_DISCOVER_CHARACTERISTIC,
+    STATE_WAIT,
+    STATE_RELEASE,
+    STATE_RESET,
+    STATE_TOGGLE_RECORDING, 
+    STATE_DISCONNECTING
+};
+
+/** @brief UUID of the VAL Characteristic. **/
+#define BT_UUID_SNES_VAL \
+	BT_UUID_128_ENCODE(0x00000201, 0x4865, 0x7673, 0x025A, 0x4845532D534F)
+
+/** @brief UUID of the CMD Characteristic. **/
+#define BT_UUID_SNES_CMD_VAL \
+	BT_UUID_128_ENCODE(0x00000202, 0x4865, 0x7673, 0x025A, 0x4845532D534F)
+
+/** @brief UUID of the Status Characteristic. **/
+#define BT_UUID_SNES_STATUS_VAL \
+	BT_UUID_128_ENCODE(0x00000203, 0x4865, 0x7673, 0x025A, 0x4845532D534F)
+
+/** @brief UUID of the Status Characteristic. **/
+#define BT_UUID_SNES_DOR_VAL \
+	BT_UUID_128_ENCODE(0x00000204, 0x4865, 0x7673, 0x025A, 0x4845532D534F)
+
+/** @brief UUID of the Device Identifier. **/
+
+#define BT_UUID_SNES_DEVICE_ID_VAL \
+	BT_UUID_128_ENCODE(0x00000205, 0x4865, 0x7673, 0x025A, 0x4845532D534F)
+
+/** @brief UUID of the Mic Input Gain. **/
+#define BT_UUID_SNES_MIC_INPUT_GAIN_VAL \
+	BT_UUID_128_ENCODE(0x00000206, 0x4865, 0x7673, 0x025A, 0x4845532D534F)
+
 void ble_thread_init(void);
 
-void ble_controller(void);
+int ble_init(void);
+
+void ble_controller(struct k_work *work);
 int ble_start_scan(void);
 int ble_stop_scan(void);
 
-void ble_device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type, struct net_buf_simple *ad);
+void ble_device_found_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_t type, struct net_buf_simple *ad);
 void ble_remove_device();
 
 bool ble_manufacturer_data_cb(struct bt_data *data, void *user_data);
 bool ble_data_cb(struct bt_data *data, void *user_data);
 
 void ble_connect(struct Monkey monkey);
-void ble_connected(struct bt_conn *conn, uint8_t err);
+void ble_connected_cb(struct bt_conn *conn, uint8_t err);
 void ble_disconnect(void);
-void ble_disconnected(struct bt_conn *conn, uint8_t reason);
+void ble_disconnected_cb(struct bt_conn *conn, uint8_t reason);
+void ble_discover_service(void);
+uint8_t ble_service_discovered_cb(struct bt_conn *conn, 
+                            const struct bt_gatt_attr *attr,
+                            struct bt_gatt_discover_params *params);
 
-void ble_send_data(uint8_t *data, uint16_t len);
+void ble_write_data(uint8_t *data, uint16_t len);
+void ble_data_written_cb();
 void ble_open_collar(void);
 void ble_reset_collar(void);
 void ble_toggle_recording(void);
+
+void ble_param_updated_cb(struct bt_conn *conn, uint16_t interval, uint16_t latency, uint16_t timeout);
+
+bool ble_param_request_cb(struct bt_conn *conn, struct bt_le_conn_param *param);
+void ble_exchange_func(struct bt_conn *conn, uint8_t err, struct bt_gatt_exchange_params *params);
 
 int ble_parse_device_name(char* name);
 
