@@ -24,6 +24,7 @@ int main(void)
 	led_thread_init();
 	button_manager_init();
 	initMonkeyList();
+	Task_Display_Controller_Init();
 
 	k_sleep( K_FOREVER );
 	return 0;

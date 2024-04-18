@@ -83,7 +83,8 @@ void ble_controller(){
     ble_start_scan();
     while (true)
     {
-        
+        ble_remove_device();
+        k_sleep(K_MSEC(BLE_TIMEOUT));
     }
 }
 
@@ -144,16 +145,12 @@ void ble_device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type, struc
     
     // If the device is a device of interest (manufacturer = 0x5A02 = University of Applied Sciences Valais / 
     // Haute Ecole Valaisanne), add it to the list or udpate if already exist
-    if(manufacturerData[0] == 0x5A && manufacturerData[1] == 0x02){
+    if(manufacturerData[0] == 0x5A && manufacturerData[1] == 0x02 && (strstr(name, "Speak No Evil")) != NULL){
         appendOrModifyMonkey(ble_parse_device_name(name), rssi, manufacturerData[2], manufacturerData[3], *addr, k_uptime_get_32());
         #ifdef DEBUG_MODE
             printMonkeys();
         #endif 
-
-        struct Monkey monkey;
-        getMonkeyByID(&monkey,ble_parse_device_name(name));
-
-        ble_connect(monkey);
+        printk("Monkey %d found, address %s\n", ble_parse_device_name(name), addr_str);
     }  
 
     free(data1);
