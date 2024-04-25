@@ -32,8 +32,6 @@ struct bt_conn *connectedDevice;
 struct Monkey connectedMonkey;
 uint16_t monkey_handle;
 
-int current_state = STATE_INIT;
-
 struct bt_uuid_128 monkey_src_UUID = BT_UUID_INIT_128(BT_UUID_SNES_VAL);
 struct bt_uuid_128 monkey_cmd_UUID = BT_UUID_INIT_128(BT_UUID_SNES_CMD_VAL);
 
@@ -58,8 +56,6 @@ void ble_thread_init(){
     #endif
 
     k_work_init(&work, ble_controller);
-
-    k_event_set(&event, BLE_EV_DEFAULT);
 }
 
 int ble_init(void){
@@ -84,9 +80,6 @@ int ble_init(void){
     #ifdef DEBUG_MODE
         printk("Bluetooth initialized\n");
     #endif
-
-    k_event_set(&event, BLE_EV_SCAN);
-
     return 1;
 }
 
@@ -94,123 +87,12 @@ int ble_init(void){
 void ble_controller(struct k_work *work){
     int err;
 
+    ble_init(); 
+    ble_start_scan();
+
     while (true)
     {   
-        uint32_t ev = k_event_wait(&event, 0xFFF, false, K_NO_WAIT);
-        printk("Event: %d\n", ev);
-        switch (current_state) {
-            case STATE_INIT:
-            printk("STATE_INIT\n");
-                if (ev == BLE_EV_SCAN) {
-                    current_state = STATE_SCANNING;
-                }                
-                break;
-
-            case STATE_SCANNING:
-            printk("STATE_SCANNING\n");
-                if (ev == BLE_EV_CONNECTING){
-                    current_state = STATE_CONNECTING;
-                }
-                break;
-
-            case STATE_CONNECTING:
-            printk("STATE_CONNECTING\n");
-                if (ev == BLE_EV_CONNECTED) {
-                    current_state = STATE_CONNECTED;
-                }
-                break;
-
-            case STATE_CONNECTED:
-            printk("STATE_CONNECTED\n");
-                if (ev == BLE_EV_DISCOVER_CHARA){
-                    current_state = STATE_DISCOVER_CHARACTERISTIC;
-                }
-                break;
-
-            case STATE_DISCOVER_CHARACTERISTIC:
-            printk("STATE_DISCOVER_CHARACTERISTIC\n");
-                if(ev == BLE_EV_CHARA_DISCOVERED){
-                    current_state = STATE_WAIT;
-                }
-                break;
-            case STATE_WAIT:
-            printk("STATE_WAIT\n");
-                if(ev == BLE_EV_RELEASE){
-                    current_state = STATE_RELEASE;
-                } else if(ev == BLE_EV_RESET){
-                    current_state = STATE_RESET;
-                } else if(ev == BLE_EV_TOGGLE_RECORDING){
-                    current_state = STATE_TOGGLE_RECORDING;
-                } else if (ev == BLE_EV_DISCONNECT){
-                    current_state = STATE_DISCONNECTING;
-                }
-                break;
-            case STATE_RELEASE:
-            case STATE_RESET:
-            case STATE_TOGGLE_RECORDING:
-            printk("STATE_TOGGLE_RECORDING / RESET / TOGGLE\n");
-                if(ev == BLE_EV_DEFAULT){
-                    current_state = STATE_WAIT;
-                }
-                break;
-            case STATE_DISCONNECTING:
-            printk("STATE_DISCONNECTING\n");
-                if(ev == BLE_EV_DISCONNECTED){
-                    current_state = STATE_SCANNING;
-                }
-                break;
-
-            default:
-                printk("Unknown state encountered!\n");
-                current_state = STATE_SCANNING;
-                break;
-        }
-
-        switch (current_state) {
-            case STATE_INIT:
-                err = ble_init();
-                if(err != 1){
-                    return;
-                }
-                break;
-
-            case STATE_SCANNING:
-                err = ble_start_scan();
-                if(err != 1){
-                    return;
-                }
-                break;
-
-            case STATE_CONNECTING:
-                break;
-
-            case STATE_CONNECTED:
-                ble_discover_service();
-                break;
-
-            case STATE_DISCOVER_CHARACTERISTIC:
-                break;
-
-            case STATE_WAIT:
-                break;
-
-            case STATE_RELEASE:
-                break;
-
-            case STATE_RESET:
-                break;
-
-            case STATE_TOGGLE_RECORDING:
-                break;
-
-            case STATE_DISCONNECTING:
-                ble_disconnect();
-                break;
-
-            default:
-                printk("Unknown state encountered!\n");
-                break;
-        }
+        
     }
 }
 
@@ -343,7 +225,6 @@ bool ble_manufacturer_data_cb(struct bt_data *data, void *user_data)
 void ble_connect(struct Monkey monkey){
     struct bt_conn* conn;
     int err = ble_stop_scan();
-    k_event_set(&event, BLE_EV_CONNECTING);
 
 	if (err) {
         #ifdef DEBUG_MODE
@@ -369,8 +250,6 @@ void ble_connect(struct Monkey monkey){
     }
     connectedMonkey = monkey;
 
-    k_event_set(&event, BLE_EV_CONNECTING);
-
     #ifdef DEBUG_MODE
         printk("Connecting to Monkey %d\n", connectedMonkey.num);
     #endif
@@ -394,9 +273,6 @@ void ble_connected_cb(struct bt_conn *conn, uint8_t err)
         connectedMonkey = (struct Monkey){0};
 
         connectionFailed();
-
-		k_event_set(&event, BLE_EV_SCAN);
-
 		return;
 	}
 
@@ -413,8 +289,6 @@ void ble_connected_cb(struct bt_conn *conn, uint8_t err)
     #endif
 
     connected(connectedMonkey);
-
-    k_event_set(&event, BLE_EV_CONNECTED);
 }
 
 void ble_exchange_func(struct bt_conn *conn, uint8_t err, struct bt_gatt_exchange_params *params)
@@ -451,7 +325,8 @@ void ble_disconnected_cb(struct bt_conn *conn, uint8_t reason)
     connectedMonkey = (struct Monkey){0};
 
     disconnected();
-    k_event_set(&event, BLE_EV_SCAN);
+
+    ble_start_scan();
 }
 
 bool ble_param_request_cb(struct bt_conn *conn, struct bt_le_conn_param *param){
@@ -498,7 +373,6 @@ uint8_t ble_service_discovered_cb(struct bt_conn *conn,
     monkey_handle = bt_gatt_attr_value_handle(attr);
     printk("Monkey value handle %u\n", monkey_handle);
 
-     k_event_set(&event, BLE_EV_CHARA_DISCOVERED);
     return BT_GATT_ITER_CONTINUE; 
 }
 
@@ -527,21 +401,15 @@ void ble_data_written_cb(){
 
 // Function to open the collar
 void ble_open_collar(void) {
-    k_event_set(&event, BLE_EV_RELEASE);
-
-    //k_event_set(&event, BLE_EV_DEFAULT);
+    printk("Open collar\n");
 }
 
 // Function to reset the collar
 void ble_reset_collar(void){
-    k_event_set(&event, BLE_EV_RESET);
-
-    //k_event_set(&event, BLE_EV_DEFAULT);
+    printk("Reset collar\n");
 }
 
 // Function to toggle the recording
 void ble_toggle_recording(void){
-    k_event_set(&event, BLE_EV_TOGGLE_RECORDING);
-
-    //k_event_set(&event, BLE_EV_DEFAULT);
+    printk("Toggle recording\n");
 }
