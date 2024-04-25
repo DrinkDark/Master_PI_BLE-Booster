@@ -20,9 +20,9 @@ int main(void)
 	 	printk("Programm started!\n");
 	#endif
 
-	ble_thread_init();
 	led_thread_init();
 	button_manager_init();
+	ble_thread_init();
 	initMonkeyList();
 	Task_Display_Controller_Init();
 

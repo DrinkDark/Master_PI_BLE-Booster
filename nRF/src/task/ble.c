@@ -92,43 +92,49 @@ int ble_init(void){
 
 // Funtion to start the ble controller
 void ble_controller(struct k_work *work){
-    int ret;
     int err;
 
     while (true)
     {   
-        uint32_t ev = k_event_wait(&event, 0xFFF, false, K_FOREVER);
+        uint32_t ev = k_event_wait(&event, 0xFFF, false, K_NO_WAIT);
+        printk("Event: %d\n", ev);
         switch (current_state) {
             case STATE_INIT:
+            printk("STATE_INIT\n");
                 if (ev == BLE_EV_SCAN) {
                     current_state = STATE_SCANNING;
                 }                
                 break;
 
             case STATE_SCANNING:
+            printk("STATE_SCANNING\n");
                 if (ev == BLE_EV_CONNECTING){
                     current_state = STATE_CONNECTING;
                 }
                 break;
 
             case STATE_CONNECTING:
+            printk("STATE_CONNECTING\n");
                 if (ev == BLE_EV_CONNECTED) {
                     current_state = STATE_CONNECTED;
                 }
                 break;
 
             case STATE_CONNECTED:
+            printk("STATE_CONNECTED\n");
                 if (ev == BLE_EV_DISCOVER_CHARA){
                     current_state = STATE_DISCOVER_CHARACTERISTIC;
                 }
                 break;
 
             case STATE_DISCOVER_CHARACTERISTIC:
+            printk("STATE_DISCOVER_CHARACTERISTIC\n");
                 if(ev == BLE_EV_CHARA_DISCOVERED){
                     current_state = STATE_WAIT;
                 }
                 break;
             case STATE_WAIT:
+            printk("STATE_WAIT\n");
                 if(ev == BLE_EV_RELEASE){
                     current_state = STATE_RELEASE;
                 } else if(ev == BLE_EV_RESET){
@@ -142,11 +148,13 @@ void ble_controller(struct k_work *work){
             case STATE_RELEASE:
             case STATE_RESET:
             case STATE_TOGGLE_RECORDING:
+            printk("STATE_TOGGLE_RECORDING / RESET / TOGGLE\n");
                 if(ev == BLE_EV_DEFAULT){
                     current_state = STATE_WAIT;
                 }
                 break;
             case STATE_DISCONNECTING:
+            printk("STATE_DISCONNECTING\n");
                 if(ev == BLE_EV_DISCONNECTED){
                     current_state = STATE_SCANNING;
                 }
@@ -268,7 +276,6 @@ void ble_device_found_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_t type, st
         #ifdef DEBUG_MODE
             printMonkeys();
         #endif 
-
     }  
 
     free(data1);
@@ -444,7 +451,6 @@ void ble_disconnected_cb(struct bt_conn *conn, uint8_t reason)
     connectedMonkey = (struct Monkey){0};
 
     disconnected();
-	ble_start_scan();
     k_event_set(&event, BLE_EV_SCAN);
 }
 
