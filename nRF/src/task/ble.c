@@ -10,6 +10,8 @@
 #include "ble.h"
 #include "../define.h"
 #include "connection.h"
+#include "snes.h"
+#include "snes_client.h"
 
 K_EVENT_DEFINE(event);
 
@@ -28,9 +30,28 @@ LOG_MODULE_REGISTER(ble, LOG_LEVEL_DBG);
 
 struct k_work work;
 
+struct snes_client snes;
+const struct snes_client_cb snes_callbacks = {
+    .cmd_sent = ble_write_data,
+    /*.status_received = your_status_received_callback_function,
+    .dor_received = your_dor_received_callback_function,
+    .device_id_received = your_device_id_received_callback_function,
+    .mic_gain_received = your_mic_gain_received_callback_function,
+    .status_unsubscribed = your_status_unsubscribed_callback_function,
+    .dor_unsubscribed = your_dor_unsubscribed_callback_function,
+    .device_id_unsubscribed = your_device_id_unsubscribed_callback_function,
+    .mic_gain_unsubscribed = your_mic_gain_unsubscribed_callback_function*/
+};
+
+struct snes_client_init_param snes_init_params = {
+    .cb = snes_callbacks
+};
+
 struct bt_conn *connectedDevice;
 struct Monkey connectedMonkey;
 uint16_t monkey_handle;
+
+#define BT_UUID_SNES_VAL BT_UUID_128_ENCODE(0x00000201, 0x4865, 0x7673, 0x025A, 0x4845532D534F)
 
 struct bt_uuid_128 monkey_src_UUID = BT_UUID_INIT_128(BT_UUID_SNES_VAL);
 struct bt_uuid_128 monkey_cmd_UUID = BT_UUID_INIT_128(BT_UUID_SNES_CMD_VAL);
@@ -68,7 +89,15 @@ int ble_init(void){
     connectedDevice = NULL;
     connectedMonkey = (struct Monkey){0};
 
-    int err = bt_enable(NULL);
+    int err = snes_client_init(&snes, &snes_init_params);
+    if (err) {
+                #ifdef DEBUG_MODE
+            printk("SNES client init failed (err %d)\n", err);
+        #endif
+        return 0;
+    }
+
+    err = bt_enable(NULL);
 
     if (err) {
         #ifdef DEBUG_MODE
@@ -246,7 +275,7 @@ void ble_connect(struct Monkey monkey){
 		ble_start_scan();
         return;
 	} else {
-        connectedDevice = conn;
+        connectedDevice = bt_conn_ref(conn);
     }
     connectedMonkey = monkey;
 
@@ -341,7 +370,6 @@ void ble_param_updated_cb(struct bt_conn *conn, uint16_t interval, uint16_t late
         printk("Connection parameters updated. interval: %d, latency: %d, timeout: %d\n", interval, latency, timeout);
     #endif
     connected(connectedMonkey);
-
     //ble_discover_service();
 }
 
@@ -353,10 +381,10 @@ void ble_discover_service() {
     discover_params.func = ble_service_discovered_cb;
     discover_params.start_handle = BT_ATT_FIRST_ATTRIBUTE_HANDLE;
     discover_params.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
-    discover_params.type = BT_GATT_DISCOVER_CHARACTERISTIC;
+    discover_params.type = BT_GATT_DISCOVER_PRIMARY;
 
     err = bt_gatt_discover(connectedDevice, &discover_params);
-    printk("Discover service %d\n", err);
+
     if (err) {
         #ifdef DEBUG_MODE
             printk("Discover service failed (err %d)\n", err);
