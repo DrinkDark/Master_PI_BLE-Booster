@@ -158,6 +158,7 @@ void ble_device_found_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_t type, st
         #ifdef DEBUG_MODE
             printMonkeys();
         #endif 
+        ble_remove_device();
     }  
 
     free(data1);
@@ -245,8 +246,7 @@ void ble_connect(struct Monkey monkey){
 		ble_start_scan();
         return;
 	} else {
-        connectedDevice = bt_conn_ref(conn);
-        bt_conn_unref(conn);
+        connectedDevice = conn;
     }
     connectedMonkey = monkey;
 
@@ -279,7 +279,7 @@ void ble_connected_cb(struct bt_conn *conn, uint8_t err)
     static struct bt_gatt_exchange_params exchange_params;
 
 	exchange_params.func = ble_exchange_func;
-	err = bt_gatt_exchange_mtu(conn, &exchange_params);
+	err = bt_gatt_exchange_mtu(connectedDevice, &exchange_params);
 	if (err) {
 		LOG_WRN("MTU exchange failed (err %d)\n", err);
 	}
@@ -287,8 +287,6 @@ void ble_connected_cb(struct bt_conn *conn, uint8_t err)
     #ifdef DEBUG_MODE
         printk("Connected to monkey %d\n", connectedMonkey.num);
     #endif
-
-    connected(connectedMonkey);
 }
 
 void ble_exchange_func(struct bt_conn *conn, uint8_t err, struct bt_gatt_exchange_params *params)
@@ -331,7 +329,7 @@ void ble_disconnected_cb(struct bt_conn *conn, uint8_t reason)
 
 bool ble_param_request_cb(struct bt_conn *conn, struct bt_le_conn_param *param){
     #ifdef DEBUG_MODE
-        printk("Connection parameters update request. min: %d, max: %d, latency: %d, tmieout: %d\n", param->interval_min, param->interval_max, param->latency, param->timeout); 
+        printk("Connection parameters update request. min: %d, max: %d, latency: %d, timeout: %d\n", param->interval_min, param->interval_max, param->latency, param->timeout); 
     #endif
 
     int ret = bt_conn_le_param_update(conn, param);
@@ -342,7 +340,9 @@ void ble_param_updated_cb(struct bt_conn *conn, uint16_t interval, uint16_t late
     #ifdef DEBUG_MODE
         printk("Connection parameters updated. interval: %d, latency: %d, timeout: %d\n", interval, latency, timeout);
     #endif
+    connected(connectedMonkey);
 
+    //ble_discover_service();
 }
 
 void ble_discover_service() {
@@ -355,16 +355,17 @@ void ble_discover_service() {
     discover_params.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
     discover_params.type = BT_GATT_DISCOVER_CHARACTERISTIC;
 
-    #ifdef DEBUG_MODE
-        printk("Discover service started\n");
-    #endif
-
     err = bt_gatt_discover(connectedDevice, &discover_params);
+    printk("Discover service %d\n", err);
     if (err) {
         #ifdef DEBUG_MODE
             printk("Discover service failed (err %d)\n", err);
         #endif
     }
+
+    #ifdef DEBUG_MODE
+        printk("Discover service started\n");
+    #endif
 }
 
 uint8_t ble_service_discovered_cb(struct bt_conn *conn, 

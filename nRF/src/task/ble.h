@@ -7,7 +7,7 @@
 
 #define BLE_STACK_SIZE 2048
 #define BLE_PRIORITY 6
-#define BLE_TIMEOUT 10000
+#define BLE_TIMEOUT 3000
 #define BLE_SCAN_INTERVAL 2000
 
 #define NAME_LEN 30
