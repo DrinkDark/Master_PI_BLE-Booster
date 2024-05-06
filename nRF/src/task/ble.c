@@ -408,38 +408,6 @@ void ble_param_updated_cb(struct bt_conn *conn, uint16_t interval, uint16_t late
     connected(connectedMonkey);
 }
 
-void ble_discover_service() {
-    int err;
-    struct bt_gatt_discover_params discover_params;
-
-    discover_params.uuid = &monkey_src_UUID.uuid;
-    discover_params.func = ble_service_discovered_cb;
-    discover_params.start_handle = BT_ATT_FIRST_ATTRIBUTE_HANDLE;
-    discover_params.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
-    discover_params.type = BT_GATT_DISCOVER_PRIMARY;
-
-    err = bt_gatt_discover(connectedDevice, &discover_params);
-
-    if (err) {
-        #ifdef DEBUG_MODE
-            printk("Discover service failed (err %d)\n", err);
-        #endif
-    }
-
-    #ifdef DEBUG_MODE
-        printk("Discover service started\n");
-    #endif
-}
-
-uint8_t ble_service_discovered_cb(struct bt_conn *conn, 
-                            const struct bt_gatt_attr *attr,
-                            struct bt_gatt_discover_params *params){
-    monkey_handle = bt_gatt_attr_value_handle(attr);
-    printk("Monkey value handle %u\n", monkey_handle);
-
-    return BT_GATT_ITER_CONTINUE; 
-}
-
 // Function to send data to a specific device
 void ble_write_data(uint8_t *data, uint16_t len){
     int err = bt_gatt_write_without_response_cb(connectedDevice, monkey_handle, data, len,

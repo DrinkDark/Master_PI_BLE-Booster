@@ -56,10 +56,6 @@ void ble_connect(struct Monkey monkey);
 void ble_connected_cb(struct bt_conn *conn, uint8_t err);
 void ble_disconnect(void);
 void ble_disconnected_cb(struct bt_conn *conn, uint8_t reason);
-void ble_discover_service(void);
-uint8_t ble_service_discovered_cb(struct bt_conn *conn, 
-                            const struct bt_gatt_attr *attr,
-                            struct bt_gatt_discover_params *params);
 
 void ble_write_data(uint8_t *data, uint16_t len);
 void ble_data_written_cb();
