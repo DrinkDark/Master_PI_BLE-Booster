@@ -1,11 +1,14 @@
+#include <zephyr/kernel.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/bluetooth/gatt.h>
+#include <bluetooth/gatt_dm.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/logging/log.h>
 #include <stdlib.h>
+
 
 #include "ble.h"
 #include "../define.h"
@@ -47,14 +50,21 @@ struct snes_client_init_param snes_init_params = {
     .cb = snes_callbacks
 };
 
+//struct bt_gatt_dm snes_dm;
+
+static struct bt_gatt_dm_cb dm_callbacks = {
+    .completed = ble_open_collar,
+    .service_not_found = ble_reset_collar,
+};
+
 struct bt_conn *connectedDevice;
 struct Monkey connectedMonkey;
 uint16_t monkey_handle;
 
-#define BT_UUID_SNES_VAL BT_UUID_128_ENCODE(0x00000201, 0x4865, 0x7673, 0x025A, 0x4845532D534F)
-
 struct bt_uuid_128 monkey_src_UUID = BT_UUID_INIT_128(BT_UUID_SNES_VAL);
 struct bt_uuid_128 monkey_cmd_UUID = BT_UUID_INIT_128(BT_UUID_SNES_CMD_VAL);
+
+
 
 //Function to initialize the ble thread
 void ble_thread_init(){
@@ -88,6 +98,7 @@ int ble_init(void){
     
     connectedDevice = NULL;
     connectedMonkey = (struct Monkey){0};
+    
 
     int err = snes_client_init(&snes, &snes_init_params);
     if (err) {
@@ -96,6 +107,8 @@ int ble_init(void){
         #endif
         return 0;
     }
+
+    //bt_gatt_dm_init(&snes_dm, &dm_callbacks, NULL);
 
     err = bt_enable(NULL);
 
@@ -114,8 +127,6 @@ int ble_init(void){
 
 // Funtion to start the ble controller
 void ble_controller(struct k_work *work){
-    int err;
-
     ble_init(); 
     ble_start_scan();
 
@@ -305,12 +316,17 @@ void ble_connected_cb(struct bt_conn *conn, uint8_t err)
 		return;
 	}
 
-    static struct bt_gatt_exchange_params exchange_params;
+    err = bt_gatt_dm_start(connectedDevice, &monkey_src_UUID.uuid, &dm_callbacks, &snes);
+      
+    if (err != 0) {
+		printk("Failed to assign service handle");
 
-	exchange_params.func = ble_exchange_func;
-	err = bt_gatt_exchange_mtu(connectedDevice, &exchange_params);
-	if (err) {
-		LOG_WRN("MTU exchange failed (err %d)\n", err);
+		bt_conn_unref(connectedDevice);
+		connectedDevice = NULL;
+        connectedMonkey = (struct Monkey){0};
+
+        connectionFailed();
+		return;
 	}
 
     #ifdef DEBUG_MODE

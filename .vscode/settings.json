@@ -4,5 +4,10 @@
     ],
     "nrf-connect.topdir": "${nrf-connect.sdk:2.6.0}",
     "C_Cpp.configurationWarnings": "disabled",
-    "cmake.sourceDirectory": "C:/Users/adrie/OneDrive/Documents/HES/Master/PI_MobileSens/soft/BLE_Booster/display_nrf/display_controller"
+    "cmake.sourceDirectory": "C:/Users/adrie/OneDrive/Documents/HES/Master/PI_MobileSens/soft/BLE_Booster/display_nrf/display_controller",
+    "files.associations": {
+        "log.h": "c",
+        "inttypes.h": "c",
+        "gatt.h": "c"
+    }
 }
