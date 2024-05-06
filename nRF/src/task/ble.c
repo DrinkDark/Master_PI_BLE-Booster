@@ -53,8 +53,8 @@ struct snes_client_init_param snes_init_params = {
 //struct bt_gatt_dm snes_dm;
 
 static struct bt_gatt_dm_cb dm_callbacks = {
-    .completed = ble_open_collar,
-    .service_not_found = ble_reset_collar,
+    .completed = ble_discovery_complete_cb,
+    .service_not_found = ble_discovery_service_not_found_cb,
 };
 
 struct bt_conn *connectedDevice;
@@ -63,8 +63,6 @@ uint16_t monkey_handle;
 
 struct bt_uuid_128 monkey_src_UUID = BT_UUID_INIT_128(BT_UUID_SNES_VAL);
 struct bt_uuid_128 monkey_cmd_UUID = BT_UUID_INIT_128(BT_UUID_SNES_CMD_VAL);
-
-
 
 //Function to initialize the ble thread
 void ble_thread_init(){
@@ -334,6 +332,28 @@ void ble_connected_cb(struct bt_conn *conn, uint8_t err)
     #endif
 }
 
+void ble_discovery_complete_cb(struct bt_gatt_dm *dm, void *context){
+    struct snes_client *snes = context;
+    #ifdef DEBUG_MODE
+        printk("Discovery complete\n");
+    #endif
+
+    snes_handles_assign(dm, snes);
+    snes_status_subscribe_receive(snes);
+    snes_dor_subscribe_receive(snes);
+    snes_device_id_subscribe_receive(snes);
+    snes_mic_gain_subscribe_receive(snes);
+
+    bt_gatt_dm_data_release(dm);
+
+}
+
+void ble_discovery_service_not_found_cb(struct bt_gatt_dm *dm, void *context){
+    #ifdef DEBUG_MODE
+        printk("Service not found\n");
+    #endif
+}
+
 void ble_exchange_func(struct bt_conn *conn, uint8_t err, struct bt_gatt_exchange_params *params)
 {
 	if (!err) {
@@ -386,7 +406,6 @@ void ble_param_updated_cb(struct bt_conn *conn, uint16_t interval, uint16_t late
         printk("Connection parameters updated. interval: %d, latency: %d, timeout: %d\n", interval, latency, timeout);
     #endif
     connected(connectedMonkey);
-    //ble_discover_service();
 }
 
 void ble_discover_service() {

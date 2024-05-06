@@ -67,6 +67,9 @@ void ble_open_collar(void);
 void ble_reset_collar(void);
 void ble_toggle_recording(void);
 
+void ble_discovery_complete_cb(struct bt_gatt_dm *dm, void *context);
+void ble_discovery_service_not_found_cb(struct bt_gatt_dm *dm, void *context);
+
 void ble_param_updated_cb(struct bt_conn *conn, uint16_t interval, uint16_t latency, uint16_t timeout);
 
 bool ble_param_request_cb(struct bt_conn *conn, struct bt_le_conn_param *param);
