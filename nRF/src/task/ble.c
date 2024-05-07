@@ -36,14 +36,14 @@ struct k_work work;
 struct snes_client snes;
 const struct snes_client_cb snes_callbacks = {
     .cmd_sent = ble_data_written_cb,
-    /*.status_received = your_status_received_callback_function,
-    .dor_received = your_dor_received_callback_function,
-    .device_id_received = your_device_id_received_callback_function,
-    .mic_gain_received = your_mic_gain_received_callback_function,
-    .status_unsubscribed = your_status_unsubscribed_callback_function,
-    .dor_unsubscribed = your_dor_unsubscribed_callback_function,
-    .device_id_unsubscribed = your_device_id_unsubscribed_callback_function,
-    .mic_gain_unsubscribed = your_mic_gain_unsubscribed_callback_function*/
+    .status_received = ble_status_received_cb,
+    .dor_received = ble_dor_received_cb,
+    .device_id_received = ble_device_id_received_cb,
+    .mic_gain_received = ble_mic_gain_received_cb,
+    .status_unsubscribed = ble_status_unsubscribed_cb,
+    .dor_unsubscribed = ble_dor_unsubscribed_cb,
+    .device_id_unsubscribed = ble_device_id_unsubscribed_cb,
+    .mic_gain_unsubscribed = ble_mic_gain_received_cb
 };
 
 struct snes_client_init_param snes_init_params = {
@@ -418,17 +418,70 @@ void ble_data_written_cb(){
 
 // Function to open the collar
 void ble_open_collar(void) {
-    uint8_t data[] = {0xa5, 0x01};
+    uint8_t data[] = {BLE_MSG_HEADER, BLE_MSG_OPEN_COLLAR};
     snes_client_cmd_send(&snes, data, sizeof(data));
-    printk("Open collar\n");
+
+    #ifdef DEBUG_MODE
+        printk("Open collar\n");
+    #endif
 }
 
 // Function to reset the collar
 void ble_reset_collar(void){
-    printk("Reset collar\n");
+    uint8_t data[] = {BLE_MSG_HEADER, BLE_MSG_RESET_DEVICE};
+    snes_client_cmd_send(&snes, data, sizeof(data));
+    
+    #ifdef DEBUG_MODE
+        printk("Reset collar\n");
+    #endif
 }
 
 // Function to toggle the recording
 void ble_toggle_recording(void){
-    printk("Toggle recording\n");
+    uint8_t data[] = {BLE_MSG_HEADER, BLE_MSG_TOGGLE_RECORDING};
+    snes_client_cmd_send(&snes, data, sizeof(data));
+    
+    #ifdef DEBUG_MODE
+        printk("Reset collar\n");
+    #endif
+}
+
+// Callback function for when the status is received
+void ble_status_received_cb(void) {
+    // TODO: Implement the callback logic for status received
+}
+
+// Callback function for when the DOR is received
+void ble_dor_received_cb(void) {
+    // TODO: Implement the callback logic for DOR received
+}
+
+// Callback function for when the device ID is received
+void ble_device_id_received_cb(void) {
+    // TODO: Implement the callback logic for device ID received
+}
+
+// Callback function for when the mic gain is received
+void ble_mic_gain_received_cb(void) {
+    // TODO: Implement the callback logic for mic gain received
+}
+
+// Callback function for when the status is unsubscribed
+void ble_status_unsubscribed_cb(void) {
+    // TODO: Implement the callback logic for status unsubscribed
+}
+
+// Callback function for when the DOR is unsubscribed
+void ble_dor_unsubscribed_cb(void) {
+    // TODO: Implement the callback logic for DOR unsubscribed
+}
+
+// Callback function for when the device ID is unsubscribed
+void ble_device_id_unsubscribed_cb(void) {
+    // TODO: Implement the callback logic for device ID unsubscribed
+}
+
+// Callback function for when the mic gain is unsubscribed
+void ble_mic_gain_unsubscribed_cb(void) {
+    // TODO: Implement the callback logic for mic gain unsubscribed
 }

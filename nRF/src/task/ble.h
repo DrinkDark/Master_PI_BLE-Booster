@@ -13,30 +13,16 @@
 #define NAME_LEN 30
 #define MANUFACTURER_DATA_LEN 4
 
-/** @brief UUID of the VAL Characteristic. **/
-#define BT_UUID_SNES_VAL \
-	BT_UUID_128_ENCODE(0x00000201, 0x4865, 0x7673, 0x025A, 0x4845532D534F)
-
-/** @brief UUID of the CMD Characteristic. **/
-#define BT_UUID_SNES_CMD_VAL \
-	BT_UUID_128_ENCODE(0x00000202, 0x4865, 0x7673, 0x025A, 0x4845532D534F)
-
-/** @brief UUID of the Status Characteristic. **/
-#define BT_UUID_SNES_STATUS_VAL \
-	BT_UUID_128_ENCODE(0x00000203, 0x4865, 0x7673, 0x025A, 0x4845532D534F)
-
-/** @brief UUID of the Status Characteristic. **/
-#define BT_UUID_SNES_DOR_VAL \
-	BT_UUID_128_ENCODE(0x00000204, 0x4865, 0x7673, 0x025A, 0x4845532D534F)
-
-/** @brief UUID of the Device Identifier. **/
-
-#define BT_UUID_SNES_DEVICE_ID_VAL \
-	BT_UUID_128_ENCODE(0x00000205, 0x4865, 0x7673, 0x025A, 0x4845532D534F)
-
-/** @brief UUID of the Mic Input Gain. **/
-#define BT_UUID_SNES_MIC_INPUT_GAIN_VAL \
-	BT_UUID_128_ENCODE(0x00000206, 0x4865, 0x7673, 0x025A, 0x4845532D534F)
+#define	BLE_MSG_HEADER 0xa5
+#define	BLE_MSG_OPEN_COLLAR 0x01
+#define	BLE_MSG_RESET_DEVICE 0x02
+#define	BLE_MSG_TOGGLE_RECORDING 0x03
+#define	BLE_MSG_SHUTDOWN_HARDWARE 0x04
+#define	BLE_MSG_START_HARDWARE 0x05
+#define	BLE_MSG_SEND_CURRENT_TIME 0x06
+#define	BLE_MSG_SEND_NEW_DEVICE_IDENTIFIER 0x07
+#define	BLE_MSG_SEND_NEW_MIC_INPUT_GAIN 0x08
+#define	BLE_MSG_CONFIG_BT_CTS_CLIENT 0xff
 
 void ble_thread_init(void);
 
@@ -72,5 +58,13 @@ void ble_exchange_func(struct bt_conn *conn, uint8_t err, struct bt_gatt_exchang
 
 int ble_parse_device_name(char* name);
 
+void ble_status_received_cb(void);
+void ble_dor_received_cb(void);
+void ble_device_id_received_cb(void);
+void ble_mic_gain_received_cb(void);
+void ble_status_unsubscribed_cb(void);
+void ble_dor_unsubscribed_cb(void);
+void ble_device_id_unsubscribed_cb(void);
+void ble_mic_gain_unsubscribed_cb(void);
 
 #endif /*_BLE_H_*/
