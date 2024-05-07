@@ -35,7 +35,7 @@ struct k_work work;
 
 struct snes_client snes;
 const struct snes_client_cb snes_callbacks = {
-    .cmd_sent = ble_write_data,
+    .cmd_sent = ble_data_written_cb,
     /*.status_received = your_status_received_callback_function,
     .dor_received = your_dor_received_callback_function,
     .device_id_received = your_device_id_received_callback_function,
@@ -408,21 +408,6 @@ void ble_param_updated_cb(struct bt_conn *conn, uint16_t interval, uint16_t late
     connected(connectedMonkey);
 }
 
-// Function to send data to a specific device
-void ble_write_data(uint8_t *data, uint16_t len){
-    int err = bt_gatt_write_without_response_cb(connectedDevice, monkey_handle, data, len,
-						false, ble_data_written_cb,
-						(void *)((uint32_t)len));
-    if(err){
-        #ifdef DEBUG_MODE
-            printk("Write data failed (err %d)\n", err);
-        #endif
-        return;
-    }
-    #ifdef DEBUG_MODE
-        printk("Write data : %s\n", data);
-    #endif
-}
 
 // Function called when the data has been written
 void ble_data_written_cb(){
@@ -433,6 +418,8 @@ void ble_data_written_cb(){
 
 // Function to open the collar
 void ble_open_collar(void) {
+    uint8_t data[] = {0xa5, 0x01};
+    snes_client_cmd_send(&snes, data, sizeof(data));
     printk("Open collar\n");
 }
 

@@ -57,7 +57,6 @@ void ble_connected_cb(struct bt_conn *conn, uint8_t err);
 void ble_disconnect(void);
 void ble_disconnected_cb(struct bt_conn *conn, uint8_t reason);
 
-void ble_write_data(uint8_t *data, uint16_t len);
 void ble_data_written_cb();
 void ble_open_collar(void);
 void ble_reset_collar(void);
