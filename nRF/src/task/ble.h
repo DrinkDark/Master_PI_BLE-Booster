@@ -4,11 +4,12 @@
 #include <zephyr/types.h>
 #include <zephyr/bluetooth/addr.h>
 #include "monkeylist.h"
+#include "snes.h"
+#include "snes_client.h"
 
 #define BLE_STACK_SIZE 2048
 #define BLE_PRIORITY 6
-#define BLE_TIMEOUT 3000
-#define BLE_SCAN_INTERVAL 2000
+#define BLE_SCAN_INTERVAL 4000
 
 #define NAME_LEN 30
 #define MANUFACTURER_DATA_LEN 4
@@ -43,7 +44,6 @@ void ble_connected_cb(struct bt_conn *conn, uint8_t err);
 void ble_disconnect(void);
 void ble_disconnected_cb(struct bt_conn *conn, uint8_t reason);
 
-void ble_data_written_cb();
 void ble_open_collar(void);
 void ble_reset_collar(void);
 void ble_toggle_recording(void);
@@ -58,13 +58,15 @@ void ble_exchange_func(struct bt_conn *conn, uint8_t err, struct bt_gatt_exchang
 
 int ble_parse_device_name(char* name);
 
-void ble_status_received_cb(void);
-void ble_dor_received_cb(void);
-void ble_device_id_received_cb(void);
-void ble_mic_gain_received_cb(void);
-void ble_status_unsubscribed_cb(void);
-void ble_dor_unsubscribed_cb(void);
-void ble_device_id_unsubscribed_cb(void);
-void ble_mic_gain_unsubscribed_cb(void);
+void ble_data_written_cb(struct snes_client *snes, uint8_t err, const uint8_t *data, uint16_t len);
+uint8_t ble_status_received_cb(struct snes_client *snes, const uint8_t *data, uint16_t len);
+uint8_t ble_dor_received_cb(struct snes_client *snes, const uint8_t *data, uint16_t len);
+uint8_t ble_device_id_received_cb(struct snes_client *snes, const uint8_t *data, uint16_t len);
+uint8_t ble_mic_gain_received_cb(struct snes_client *snes, const uint8_t *data, uint16_t len);
+void ble_status_unsubscribed_cb(struct snes_client *snes);
+void ble_dor_unsubscribed_cb(struct snes_client *snes);
+void ble_device_id_unsubscribed_cb(struct snes_client *snes);
+void ble_mic_gain_unsubscribed_cb(struct snes_client *snes);
+
 
 #endif /*_BLE_H_*/

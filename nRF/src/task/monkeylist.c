@@ -93,8 +93,8 @@ void printMonkeys() {
     k_mutex_lock(&monkey_mutex, K_FOREVER);
     struct Monkey* monkeyList = head_ref;
     while (monkeyList != NULL) {
-        printk("Monkey: num=%d, rssi=%d, record_time=%d, state=%d\n", 
-               monkeyList->num, monkeyList->rssi, monkeyList->record_time, monkeyList->state);
+        printk("Monkey: num=%d, rssi=%d, record_time=%d, state=%d, last seen=%d\n", 
+               monkeyList->num, monkeyList->rssi, monkeyList->record_time, monkeyList->state, monkeyList->lastSeen);
         monkeyList = monkeyList->next;
     }
 

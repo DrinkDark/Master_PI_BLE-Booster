@@ -8,6 +8,7 @@
     "files.associations": {
         "log.h": "c",
         "inttypes.h": "c",
-        "gatt.h": "c"
+        "gatt.h": "c",
+        "connection.h": "c"
     }
 }

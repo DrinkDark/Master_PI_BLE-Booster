@@ -9,12 +9,9 @@
 #include <zephyr/logging/log.h>
 #include <stdlib.h>
 
-
 #include "ble.h"
 #include "../define.h"
 #include "connection.h"
-#include "snes.h"
-#include "snes_client.h"
 
 K_EVENT_DEFINE(event);
 
@@ -192,7 +189,8 @@ void ble_device_found_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_t type, st
     // If the device is a device of interest (manufacturer = 0x5A02 = University of Applied Sciences Valais / 
     // Haute Ecole Valaisanne), add it to the list or udpate if already exist
     if(manufacturerData[0] == 0x5A && manufacturerData[1] == 0x02){
-        appendOrModifyMonkey(ble_parse_device_name(name), rssi, manufacturerData[2], manufacturerData[3], *addr, k_uptime_get_32());
+        uint32_t currentTime = k_uptime_get_32();
+        appendOrModifyMonkey(ble_parse_device_name(name), rssi, manufacturerData[2], manufacturerData[3], *addr, currentTime);
         #ifdef DEBUG_MODE
             printMonkeys();
         #endif 
@@ -203,18 +201,18 @@ void ble_device_found_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_t type, st
     free(data2);
 }
 
-// Function to remove a device from the list if it has not been seen for a certain time (BLE_TIMEOUT)
+// Function to remove a device from the list if it has not been seen for a certain time (BLE_SCAN_INTERVAL)
 void ble_remove_device(){
     uint32_t currentTime = k_uptime_get_32();
 
-    int tot = getNumMonkeys();
-    struct Monkey array[tot];
+    int nbrMonkeys = getNumMonkeys();
+    struct Monkey array[nbrMonkeys];
     getAllMonkeys(array);
 
     // Get through the list of devices and remove the ones that have not been seen for a certain time
-    for(int i = 0; i < tot;i++)
+    for(int i = 0; i < nbrMonkeys;i++)
     {
-        if((currentTime - array[i].lastSeen) >= BLE_TIMEOUT){
+        if((currentTime - array[i].lastSeen) >= BLE_SCAN_INTERVAL){
             #ifdef DEBUG_MODE
                 printk("Monkey %d removed\n", array[i].num);
             #endif           
@@ -408,14 +406,6 @@ void ble_param_updated_cb(struct bt_conn *conn, uint16_t interval, uint16_t late
     connected(connectedMonkey);
 }
 
-
-// Function called when the data has been written
-void ble_data_written_cb(){
-    #ifdef DEBUG_MODE
-        printk("Data written\n");
-    #endif
-}
-
 // Function to open the collar
 void ble_open_collar(void) {
     uint8_t data[] = {BLE_MSG_HEADER, BLE_MSG_OPEN_COLLAR};
@@ -442,46 +432,75 @@ void ble_toggle_recording(void){
     snes_client_cmd_send(&snes, data, sizeof(data));
     
     #ifdef DEBUG_MODE
-        printk("Reset collar\n");
+        printk("Toggle recording\n");
+    #endif
+}
+
+// Callback function for when the data has been written
+void ble_data_written_cb(struct snes_client *snes, uint8_t err, const uint8_t *data, uint16_t len) {
+    #ifdef DEBUG_MODE
+        printk("Data written\n");
     #endif
 }
 
 // Callback function for when the status is received
-void ble_status_received_cb(void) {
-    // TODO: Implement the callback logic for status received
+uint8_t ble_status_received_cb(struct snes_client *snes, const uint8_t *data, uint16_t len) {
+    connectedMonkey.state = data[0];
+    onUpdateInfos(connectedMonkey);
+    #ifdef DEBUG_MODE
+        printk("Status received\n");
+    #endif
 }
 
 // Callback function for when the DOR is received
-void ble_dor_received_cb(void) {
-    // TODO: Implement the callback logic for DOR received
+uint8_t ble_dor_received_cb(struct snes_client *snes, const uint8_t *data, uint16_t len) {
+    connectedMonkey.record_time = data[0];
+    onUpdateInfos(connectedMonkey);
+    #ifdef DEBUG_MODE
+        printk("Days of recording received\n");
+    #endif
 }
 
 // Callback function for when the device ID is received
-void ble_device_id_received_cb(void) {
-    // TODO: Implement the callback logic for device ID received
+uint8_t ble_device_id_received_cb(struct snes_client *snes, const uint8_t *data, uint16_t len) {
+    connectedMonkey.num = data[0];
+    onUpdateInfos(connectedMonkey);
+    #ifdef DEBUG_MODE
+        printk("Device ID received\n");
+    #endif
 }
 
 // Callback function for when the mic gain is received
-void ble_mic_gain_received_cb(void) {
-    // TODO: Implement the callback logic for mic gain received
+uint8_t ble_mic_gain_received_cb(struct snes_client *snes, const uint8_t *data, uint16_t len) {
+    #ifdef DEBUG_MODE
+        printk("Microphone gain received\n");
+    #endif
 }
 
 // Callback function for when the status is unsubscribed
-void ble_status_unsubscribed_cb(void) {
-    // TODO: Implement the callback logic for status unsubscribed
+void ble_status_unsubscribed_cb(struct snes_client *snes) {
+    #ifdef DEBUG_MODE
+        printk("Status notification unsubscribed\n");
+    #endif
 }
 
 // Callback function for when the DOR is unsubscribed
-void ble_dor_unsubscribed_cb(void) {
-    // TODO: Implement the callback logic for DOR unsubscribed
+void ble_dor_unsubscribed_cb(struct snes_client *snes) {
+    #ifdef DEBUG_MODE
+        printk("Days of recording notification unsubscribed\n");
+    #endif
 }
 
 // Callback function for when the device ID is unsubscribed
-void ble_device_id_unsubscribed_cb(void) {
-    // TODO: Implement the callback logic for device ID unsubscribed
+void ble_device_id_unsubscribed_cb(struct snes_client *snes) {
+    #ifdef DEBUG_MODE
+        printk("Device ID notification unsubscribed\n");
+    #endif
 }
 
 // Callback function for when the mic gain is unsubscribed
-void ble_mic_gain_unsubscribed_cb(void) {
-    // TODO: Implement the callback logic for mic gain unsubscribed
+void ble_mic_gain_unsubscribed_cb(struct snes_client *snes) {
+    #ifdef DEBUG_MODE
+        printk("Microphone gain notification unsubscribed\n");
+    #endif
 }
