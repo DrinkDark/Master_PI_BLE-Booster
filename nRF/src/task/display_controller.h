@@ -12,7 +12,6 @@ enum pages {
         DEVICE_PAGE       = 0x02
 };
 
-
 void displayController();
 
 void updateMainPage();

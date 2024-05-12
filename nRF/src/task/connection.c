@@ -33,8 +33,6 @@ void setOpenCollarCallback(OpenCollarCallback callback) {
     openCollarCallback = callback;
 }
 
-
-
 void setConnectedCallback(ConnectedCallback callback) {
     connectedCallback = callback;
 }
