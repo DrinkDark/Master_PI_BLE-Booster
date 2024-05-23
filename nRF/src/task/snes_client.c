@@ -374,7 +374,7 @@ int snes_device_id_subscribe_receive(struct snes_client *snes)
 {
     int err = 0;
 
-	if (atomic_test_and_set_bit(&snes->state, SNES_C_DOR_NOTIF_ENABLED)) {
+	if (atomic_test_and_set_bit(&snes->state, SNES_C_DEVICE_ID_NOTIF_ENABLED)) {
 		return -EALREADY;
 	}
 

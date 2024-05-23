@@ -40,7 +40,7 @@ const struct snes_client_cb snes_callbacks = {
     .status_unsubscribed = ble_status_unsubscribed_cb,
     .dor_unsubscribed = ble_dor_unsubscribed_cb,
     .device_id_unsubscribed = ble_device_id_unsubscribed_cb,
-    .mic_gain_unsubscribed = ble_mic_gain_received_cb
+    .mic_gain_unsubscribed = ble_mic_gain_unsubscribed_cb
 };
 
 struct snes_client_init_param snes_init_params = {
@@ -54,7 +54,6 @@ static struct bt_gatt_dm_cb dm_callbacks = {
     .service_not_found = ble_discovery_service_not_found_cb,
 };
 
-struct bt_conn *connectedDevice;
 struct Monkey connectedMonkey;
 uint16_t monkey_handle;
 
@@ -78,7 +77,7 @@ void ble_thread_init(){
     k_thread_start(&bleThread);
 
     #ifdef DEBUG_MODE
-    printk("ble_thread_init\n");
+        printk("ble_thread_init\n");
     #endif
 
     k_work_init(&work, ble_controller);
@@ -91,19 +90,16 @@ int ble_init(void){
     setResetCollarCallback(ble_reset_collar);
     setOpenCollarCallback(ble_open_collar);
     
-    connectedDevice = NULL;
+    snes = (struct snes_client){0};
     connectedMonkey = (struct Monkey){0};
-    
 
     int err = snes_client_init(&snes, &snes_init_params);
     if (err) {
-                #ifdef DEBUG_MODE
+        #ifdef DEBUG_MODE
             printk("SNES client init failed (err %d)\n", err);
         #endif
-        return 0;
+        return -1;
     }
-
-    //bt_gatt_dm_init(&snes_dm, &dm_callbacks, NULL);
 
     err = bt_enable(NULL);
 
@@ -111,13 +107,13 @@ int ble_init(void){
         #ifdef DEBUG_MODE
             printk("Bluetooth init failed (err %d)\n", err);
         #endif
-        return 0;
+        return -1;
     }
 
     #ifdef DEBUG_MODE
         printk("Bluetooth initialized\n");
     #endif
-    return 1;
+    return 0;
 }
 
 // Funtion to start the ble controller
@@ -192,7 +188,7 @@ void ble_device_found_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_t type, st
         uint32_t currentTime = k_uptime_get_32();
         appendOrModifyMonkey(ble_parse_device_name(name), rssi, manufacturerData[2], manufacturerData[3], *addr, currentTime);
         #ifdef DEBUG_MODE
-            printMonkeys();
+            //printMonkeys();
         #endif 
         ble_remove_device();
     }  
@@ -214,7 +210,7 @@ void ble_remove_device(){
     {
         if((currentTime - array[i].lastSeen) >= BLE_SCAN_INTERVAL){
             #ifdef DEBUG_MODE
-                printk("Monkey %d removed\n", array[i].num);
+                //printk("Monkey %d removed\n", array[i].num);
             #endif           
             removeMonkey(array[i].num);
         }
@@ -270,9 +266,24 @@ void ble_connect(struct Monkey monkey){
         connectionFailed();
 		return;
 	}
+    struct bt_conn_le_create_param create_param;
 
-    err = bt_conn_le_create((const bt_addr_le_t*) &monkey.btAddress, BT_CONN_LE_CREATE_CONN,
-				        BT_LE_CONN_PARAM_DEFAULT, &conn);
+    create_param.options = BT_CONN_LE_OPT_NONE;
+	create_param.interval = BT_GAP_SCAN_FAST_INTERVAL;
+	create_param.window = BT_GAP_SCAN_FAST_WINDOW;
+	create_param.interval_coded = 0;
+	create_param.window_coded = 0;
+	create_param.timeout = 0;
+    //BT_CONN_LE_CREATE_PARAM_INIT(BT_CONN_LE_OPT_NONE, BT_GAP_SCAN_FAST_INTERVAL, BT_GAP_SCAN_FAST_INTERVAL);
+
+    struct bt_le_conn_param conn_param;
+    conn_param.interval_min = BT_GAP_INIT_CONN_INT_MIN;
+	conn_param.interval_max = BT_GAP_INIT_CONN_INT_MAX;
+	conn_param.latency = 0;
+	conn_param.timeout = 400;
+    
+    err = bt_conn_le_create((const bt_addr_le_t*) &monkey.btAddress, &create_param,
+				        &conn_param, &conn);
 
 	if (err) {
         #ifdef DEBUG_MODE
@@ -281,9 +292,9 @@ void ble_connect(struct Monkey monkey){
         connectionFailed();
 		ble_start_scan();
         return;
-	} else {
-        connectedDevice = bt_conn_ref(conn);
-    }
+	}
+        
+    snes.conn = bt_conn_ref(conn);
     connectedMonkey = monkey;
 
     #ifdef DEBUG_MODE
@@ -297,28 +308,28 @@ void ble_connected_cb(struct bt_conn *conn, uint8_t err)
     char addr[BT_ADDR_LE_STR_LEN];
     bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
-    if(conn != connectedDevice){
+    if(conn != snes.conn){
         return;
     }
 
     if (err != 0) {
 		printk("Failed to connect to %s (%u)\n", addr, err);
 
-		bt_conn_unref(connectedDevice);
-		connectedDevice = NULL;
+		bt_conn_unref(snes.conn);
+		snes = (struct snes_client){0};
         connectedMonkey = (struct Monkey){0};
 
         connectionFailed();
 		return;
 	}
 
-    err = bt_gatt_dm_start(connectedDevice, &monkey_src_UUID.uuid, &dm_callbacks, &snes);
+    err = bt_gatt_dm_start(snes.conn, &monkey_src_UUID.uuid, &dm_callbacks, &snes);
       
     if (err != 0) {
 		printk("Failed to assign service handle");
 
-		bt_conn_unref(connectedDevice);
-		connectedDevice = NULL;
+		bt_conn_unref(snes.conn);
+		snes = (struct snes_client){0};
         connectedMonkey = (struct Monkey){0};
 
         connectionFailed();
@@ -331,19 +342,18 @@ void ble_connected_cb(struct bt_conn *conn, uint8_t err)
 }
 
 void ble_discovery_complete_cb(struct bt_gatt_dm *dm, void *context){
-    struct snes_client *snes = context;
+    snes.conn = context;
     #ifdef DEBUG_MODE
         printk("Discovery complete\n");
     #endif
 
-    snes_handles_assign(dm, snes);
-    snes_status_subscribe_receive(snes);
-    snes_dor_subscribe_receive(snes);
-    snes_device_id_subscribe_receive(snes);
-    snes_mic_gain_subscribe_receive(snes);
+    snes_handles_assign(dm, &snes);
+    //snes_status_subscribe_receive(&snes);
+    //snes_dor_subscribe_receive(&snes);
+    //snes_device_id_subscribe_receive(&snes);
+    //snes_mic_gain_subscribe_receive(&snes);
 
     bt_gatt_dm_data_release(dm);
-
 }
 
 void ble_discovery_service_not_found_cb(struct bt_gatt_dm *dm, void *context){
@@ -363,7 +373,7 @@ void ble_exchange_func(struct bt_conn *conn, uint8_t err, struct bt_gatt_exchang
 
 // Function to disconnect from a specific device
 void ble_disconnect(void){
-    bt_conn_disconnect(connectedDevice, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+    bt_conn_disconnect(snes.conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 }
 
 // Function called when a device is disconnected
@@ -372,7 +382,8 @@ void ble_disconnected_cb(struct bt_conn *conn, uint8_t reason)
     char addr[BT_ADDR_LE_STR_LEN];
     bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
-	if (conn != connectedDevice) {
+	if (conn != snes.conn) {
+        printk("Conn different from snes.conn");
 		return;
 	}
 
@@ -380,14 +391,15 @@ void ble_disconnected_cb(struct bt_conn *conn, uint8_t reason)
         printk("Disconnected from monkey %d, reason 0x%x\n", connectedMonkey.num, reason);
     #endif
 	
-	bt_conn_unref(connectedDevice);
+	bt_conn_unref(snes.conn);
 
-	connectedDevice = NULL;
-    connectedMonkey = (struct Monkey){0};
-
+    snes.conn = NULL;
+    //memset(&snes, 0, sizeof(snes));
+    //memset(&connectedMonkey, 0, sizeof(connectedMonkey));
+    
+    ble_remove_device();
     disconnected();
-
-    ble_start_scan();
+    NVIC_SystemReset();
 }
 
 bool ble_param_request_cb(struct bt_conn *conn, struct bt_le_conn_param *param){
@@ -446,28 +458,34 @@ void ble_data_written_cb(struct snes_client *snes, uint8_t err, const uint8_t *d
 // Callback function for when the status is received
 uint8_t ble_status_received_cb(struct snes_client *snes, const uint8_t *data, uint16_t len) {
     connectedMonkey.state = data[0];
-    onUpdateInfos(connectedMonkey);
+    updateInfos(connectedMonkey);
     #ifdef DEBUG_MODE
         printk("Status received\n");
     #endif
+
+    return 0;
 }
 
 // Callback function for when the DOR is received
 uint8_t ble_dor_received_cb(struct snes_client *snes, const uint8_t *data, uint16_t len) {
     connectedMonkey.record_time = data[0];
-    onUpdateInfos(connectedMonkey);
+    updateInfos(connectedMonkey);
     #ifdef DEBUG_MODE
         printk("Days of recording received\n");
     #endif
+
+    return 0;
 }
 
 // Callback function for when the device ID is received
 uint8_t ble_device_id_received_cb(struct snes_client *snes, const uint8_t *data, uint16_t len) {
     connectedMonkey.num = data[0];
-    onUpdateInfos(connectedMonkey);
+    updateInfos(connectedMonkey);
     #ifdef DEBUG_MODE
         printk("Device ID received\n");
     #endif
+
+    return 0;
 }
 
 // Callback function for when the mic gain is received
@@ -475,6 +493,8 @@ uint8_t ble_mic_gain_received_cb(struct snes_client *snes, const uint8_t *data, 
     #ifdef DEBUG_MODE
         printk("Microphone gain received\n");
     #endif
+
+    return 0;
 }
 
 // Callback function for when the status is unsubscribed

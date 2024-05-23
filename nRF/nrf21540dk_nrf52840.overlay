@@ -12,9 +12,17 @@
 // You can also visit the nRF DeviceTree extension documentation at https://nrfconnect.github.io/vscode-nrf-connect/devicetree/nrfdevicetree.html
 
 
+/*&uart1 {
+	status = "okay";
+	current-speed = <115200>;
+};*/
+
 &uart1 {
 	status = "okay";
 	current-speed = <115200>;
+	pinctrl-0 = <&uart1_default>;
+	pinctrl-1 = <&uart1_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 / {
@@ -22,7 +30,7 @@
 		displayuart = &uart1;
 	};
 };
-/delete-node/ &{/pin-controller/uart1_sleep/group1/};
+///delete-node/ &{/pin-controller/uart1_sleep/group1/};
 
 &button0 {
 	gpios = <&gpio0 11 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>,
