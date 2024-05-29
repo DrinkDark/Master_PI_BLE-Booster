@@ -295,6 +295,7 @@ void ble_connect(struct Monkey monkey){
 	}
         
     snes.conn = bt_conn_ref(conn);
+    bt_conn_unref(conn);
     connectedMonkey = monkey;
 
     #ifdef DEBUG_MODE
@@ -320,6 +321,7 @@ void ble_connected_cb(struct bt_conn *conn, uint8_t err)
         connectedMonkey = (struct Monkey){0};
 
         connectionFailed();
+        ble_start_scan();
 		return;
 	}
 
@@ -399,7 +401,8 @@ void ble_disconnected_cb(struct bt_conn *conn, uint8_t reason)
     
     ble_remove_device();
     disconnected();
-    NVIC_SystemReset();
+    //NVIC_SystemReset();
+    ble_start_scan();
 }
 
 bool ble_param_request_cb(struct bt_conn *conn, struct bt_le_conn_param *param){
