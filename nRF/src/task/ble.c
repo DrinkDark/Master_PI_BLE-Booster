@@ -4,6 +4,8 @@
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/bluetooth/gatt.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/device.h>
 #include <bluetooth/gatt_dm.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/logging/log.h>
@@ -80,6 +82,18 @@ void ble_thread_init(){
     k_work_init(&work, ble_controller);
 }
 
+void ble_fem_init(void) {
+    const struct device *dev;
+
+    // Set GPIO pins for TX enable
+    dev = device_get_binding(TX_EN);
+    gpio_pin_configure(dev, TX_EN_PIN, GPIO_OUTPUT_ACTIVE);
+
+    #ifdef DEBUG_MODE
+        printk("ble_fem_init\n");
+    #endif
+}
+
 int ble_init(void){
     setConnectCallback(ble_connect);
     setDisconnectCallback(ble_disconnect);
@@ -116,6 +130,7 @@ int ble_init(void){
 // Funtion to start the ble controller
 void ble_controller(struct k_work *work){
     ble_init(); 
+    ble_fem_init();
     ble_start_scan();
 
     while (true)
