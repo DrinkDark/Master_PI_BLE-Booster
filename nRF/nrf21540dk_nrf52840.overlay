@@ -49,68 +49,10 @@
 };
 
 &nrf_radio_fem {
+	ant-sel-gpios = <&gpio0 20 GPIO_ACTIVE_HIGH>;
 	tx-en-settle-time-us = <100>;
 	rx-en-settle-time-us = <100>;
 	pdn-settle-time-us = <100>;
 	trx-hold-time-us = <100>;
 };
 
-&nrf_radio_fem {
-	/delete-property/ tx-en-settle-time-us;
-};
-
-&nrf_radio_fem {
-	/delete-property/ rx-en-settle-time-us;
-};
-
-&nrf_radio_fem {
-	/delete-property/ pdn-settle-time-us;
-};
-
-&nrf_radio_fem {
-	/delete-property/ trx-hold-time-us;
-};
-
-&nrf_radio_fem {
-	tx-en-settle-time-us = <10>;
-};
-
-&nrf_radio_fem {
-	rx-en-settle-time-us = <10>;
-};
-
-&nrf_radio_fem {
-	pdn-settle-time-us = <1>;
-};
-
-&nrf_radio_fem {
-	pdn-settle-time-us = <10>;
-};
-
-&nrf_radio_fem {
-	trx-hold-time-us = <10>;
-};
-
-&nrf_radio_fem {
-	ant-sel-gpios = <&gpio0 20 GPIO_ACTIVE_LOW>;
-};
-
-&nrf_radio_fem {
-	ant-sel-gpios = <&gpio0 20 0>;
-};
-
-&nrf_radio_fem {
-	tx-en-settle-time-us = <100>;
-};
-
-&nrf_radio_fem {
-	rx-en-settle-time-us = <100>;
-};
-
-&nrf_radio_fem {
-	pdn-settle-time-us = <100>;
-};
-
-&nrf_radio_fem {
-	trx-hold-time-us = <100>;
-};
