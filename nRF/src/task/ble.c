@@ -19,8 +19,6 @@ K_EVENT_DEFINE(event);
 BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.connected = ble_connected_cb,
 	.disconnected = ble_disconnected_cb,
-    .le_param_updated = ble_param_updated_cb,
-    .le_param_req = ble_param_request_cb
 };
 
 K_THREAD_STACK_DEFINE(BLE_STACK, BLE_STACK_SIZE);
@@ -58,7 +56,6 @@ struct Monkey connectedMonkey;
 uint16_t monkey_handle;
 
 struct bt_uuid_128 monkey_src_UUID = BT_UUID_INIT_128(BT_UUID_SNES_VAL);
-struct bt_uuid_128 monkey_cmd_UUID = BT_UUID_INIT_128(BT_UUID_SNES_CMD_VAL);
 
 //Function to initialize the ble thread
 void ble_thread_init(){
@@ -123,7 +120,8 @@ void ble_controller(struct k_work *work){
 
     while (true)
     {   
-        
+        ble_remove_device();
+        k_sleep(K_MSEC(200));
     }
 }
 
@@ -138,6 +136,7 @@ int ble_start_scan(){
         #endif
 		return err;
 	}
+
     #ifdef DEBUG_MODE
         printk("ble_start_scan\n");
     #endif
@@ -155,6 +154,7 @@ int ble_stop_scan(){
         #endif
         return err;
     }
+
     #ifdef DEBUG_MODE
         //printk("ble_stop_scan\n");
     #endif
@@ -190,7 +190,6 @@ void ble_device_found_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_t type, st
         #ifdef DEBUG_MODE
             //printMonkeys();
         #endif 
-        ble_remove_device();
     }  
 
     free(data1);
@@ -266,35 +265,23 @@ void ble_connect(struct Monkey monkey){
         connectionFailed();
 		return;
 	}
-    struct bt_conn_le_create_param create_param;
-
-    create_param.options = BT_CONN_LE_OPT_NONE;
-	create_param.interval = BT_GAP_SCAN_FAST_INTERVAL;
-	create_param.window = BT_GAP_SCAN_FAST_WINDOW;
-	create_param.interval_coded = 0;
-	create_param.window_coded = 0;
-	create_param.timeout = 0;
-    //BT_CONN_LE_CREATE_PARAM_INIT(BT_CONN_LE_OPT_NONE, BT_GAP_SCAN_FAST_INTERVAL, BT_GAP_SCAN_FAST_INTERVAL);
-
-    struct bt_le_conn_param conn_param;
-    conn_param.interval_min = BT_GAP_INIT_CONN_INT_MIN;
-	conn_param.interval_max = BT_GAP_INIT_CONN_INT_MAX;
-	conn_param.latency = 0;
-	conn_param.timeout = 400;
     
-    err = bt_conn_le_create((const bt_addr_le_t*) &monkey.btAddress, &create_param,
-				        &conn_param, &conn);
+    err = bt_conn_le_create((const bt_addr_le_t*) &monkey.btAddress, BT_CONN_LE_CREATE_CONN,
+				        BT_LE_CONN_PARAM_DEFAULT, &conn);
 
 	if (err) {
         #ifdef DEBUG_MODE
             printk("%s: Create conn failed (err %d)\n", __func__, err);
         #endif  
+
         connectionFailed();
 		ble_start_scan();
         return;
 	}
         
     snes.conn = bt_conn_ref(conn);
+    bt_conn_unref(conn);
+    
     connectedMonkey = monkey;
 
     #ifdef DEBUG_MODE
@@ -316,10 +303,9 @@ void ble_connected_cb(struct bt_conn *conn, uint8_t err)
 		printk("Failed to connect to %s (%u)\n", addr, err);
 
 		bt_conn_unref(snes.conn);
-		snes = (struct snes_client){0};
-        connectedMonkey = (struct Monkey){0};
 
         connectionFailed();
+        ble_start_scan();
 		return;
 	}
 
@@ -336,6 +322,8 @@ void ble_connected_cb(struct bt_conn *conn, uint8_t err)
 		return;
 	}
 
+    connected(connectedMonkey);
+
     #ifdef DEBUG_MODE
         printk("Connected to monkey %d\n", connectedMonkey.num);
     #endif
@@ -348,10 +336,10 @@ void ble_discovery_complete_cb(struct bt_gatt_dm *dm, void *context){
     #endif
 
     snes_handles_assign(dm, &snes);
-    //snes_status_subscribe_receive(&snes);
-    //snes_dor_subscribe_receive(&snes);
-    //snes_device_id_subscribe_receive(&snes);
-    //snes_mic_gain_subscribe_receive(&snes);
+    snes_status_subscribe_receive(&snes);
+    snes_dor_subscribe_receive(&snes);
+    snes_device_id_subscribe_receive(&snes);
+    snes_mic_gain_subscribe_receive(&snes);
 
     bt_gatt_dm_data_release(dm);
 }
@@ -360,15 +348,8 @@ void ble_discovery_service_not_found_cb(struct bt_gatt_dm *dm, void *context){
     #ifdef DEBUG_MODE
         printk("Service not found\n");
     #endif
-}
 
-void ble_exchange_func(struct bt_conn *conn, uint8_t err, struct bt_gatt_exchange_params *params)
-{
-	if (!err) {
-		printk("MTU exchange done\n");
-	} else {
-		printk("MTU exchange failed (err %" PRIu8 ")", err);
-	}
+    ble_disconnect();
 }
 
 // Function to disconnect from a specific device
@@ -379,9 +360,6 @@ void ble_disconnect(void){
 // Function called when a device is disconnected
 void ble_disconnected_cb(struct bt_conn *conn, uint8_t reason)
 {
-    char addr[BT_ADDR_LE_STR_LEN];
-    bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
 	if (conn != snes.conn) {
         printk("Conn different from snes.conn");
 		return;
@@ -392,30 +370,11 @@ void ble_disconnected_cb(struct bt_conn *conn, uint8_t reason)
     #endif
 	
 	bt_conn_unref(snes.conn);
-
-    snes.conn = NULL;
-    //memset(&snes, 0, sizeof(snes));
-    //memset(&connectedMonkey, 0, sizeof(connectedMonkey));
     
     ble_remove_device();
+    
     disconnected();
-    NVIC_SystemReset();
-}
-
-bool ble_param_request_cb(struct bt_conn *conn, struct bt_le_conn_param *param){
-    #ifdef DEBUG_MODE
-        printk("Connection parameters update request. min: %d, max: %d, latency: %d, timeout: %d\n", param->interval_min, param->interval_max, param->latency, param->timeout); 
-    #endif
-
-    int ret = bt_conn_le_param_update(conn, param);
-    return (ret == 0);
-}
-
-void ble_param_updated_cb(struct bt_conn *conn, uint16_t interval, uint16_t latency, uint16_t timeout){
-    #ifdef DEBUG_MODE
-        printk("Connection parameters updated. interval: %d, latency: %d, timeout: %d\n", interval, latency, timeout);
-    #endif
-    connected(connectedMonkey);
+    ble_start_scan();
 }
 
 // Function to open the collar
