@@ -7,7 +7,6 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdbool.h>
-#include "global.h"
 #include "monkeylist.h"
 
 

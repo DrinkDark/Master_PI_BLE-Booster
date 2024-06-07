@@ -6,13 +6,25 @@ static struct Monkey* head = NULL;
 // Global variable to hold the head of the monkey list
 struct Monkey* head_ref = NULL;
 
-// Function to initialize the Monkey list and mutex
+//-----------------------------------------------------------------------------------------------------------------------
+/*! initMonkeyList
+* @brief Function to initialize the Monkey list and mutex
+*/
 void initMonkeyList() {
     k_mutex_init(&monkey_mutex);
     head = NULL;
 }
 
-// Function to append a Monkey node to the linked list or modify existing attributes if the Monkey already exists
+//-----------------------------------------------------------------------------------------------------------------------
+/*! appendOrModifyMonkey
+* @brief Function to append a Monkey node to the linked list or modify existing attributes if the Monkey already exists
+* @param num The num of the Monkey
+* @param rssi The RSSI of the Monkey
+* @param record_time The record time of the Monkey
+* @param state The state of the Monkey
+* @param address The Bluetooth address of the Monkey
+* @param lastSeen The last seen time of the Monkey
+*/
 void appendOrModifyMonkey(int num, int rssi, int record_time, enum main_state state, bt_addr_le_t address, uint32_t lastSeen) {
     k_mutex_lock(&monkey_mutex, K_FOREVER);
 
@@ -60,7 +72,11 @@ void appendOrModifyMonkey(int num, int rssi, int record_time, enum main_state st
     k_mutex_unlock(&monkey_mutex);
 }
 
-// Function to remove a Monkey with a specific num from the linked list
+//-----------------------------------------------------------------------------------------------------------------------
+/*! removeMonkey
+* @brief Function to remove a Monkey node from the linked list
+* @param num The num of the Monkey to be removed
+*/
 void removeMonkey(int num) {
     k_mutex_lock(&monkey_mutex, K_FOREVER);
 
@@ -88,7 +104,10 @@ void removeMonkey(int num) {
     k_mutex_unlock(&monkey_mutex);
 }
 
-// Function to print the linked list of Monkeys
+//-----------------------------------------------------------------------------------------------------------------------
+/*! printMonkeys
+* @brief Function to print the linked list of Monkeys
+*/
 void printMonkeys() {
     k_mutex_lock(&monkey_mutex, K_FOREVER);
     struct Monkey* monkeyList = head_ref;
@@ -101,7 +120,11 @@ void printMonkeys() {
     k_mutex_unlock(&monkey_mutex);
 }
 
-// Function to get an array of all the monkeys and the total number of monkeys
+//-----------------------------------------------------------------------------------------------------------------------
+/*! getAllMonkeys
+* @brief Function to get an array of all the monkeys and the total number of monkeys
+* @param monkeysArray Pointer to the array of Monkey structures to store the monkeys
+*/
 void getAllMonkeys(struct Monkey* monkeysArray) {
     k_mutex_lock(&monkey_mutex, K_FOREVER);
     struct Monkey* monkeyList = head_ref;
@@ -116,7 +139,13 @@ void getAllMonkeys(struct Monkey* monkeysArray) {
     k_mutex_unlock(&monkey_mutex);
 }
 
-// Function to get a single monkey from the list at a specific index
+//-----------------------------------------------------------------------------------------------------------------------
+/*! getMonkeyAtIndex
+* @brief Function to get a single monkey from the list at a specific index
+* @param monkey Pointer to the Monkey structure to store the monkey data
+* @param index Index of the monkey to retrieve
+* @return true if the monkey is found at the specified index, false otherwise
+*/
 bool getMonkeyAtIndex(struct Monkey* monkey, int index) {
     k_mutex_lock(&monkey_mutex, K_FOREVER);
     struct Monkey* monkeyList = head_ref;
@@ -139,7 +168,13 @@ bool getMonkeyAtIndex(struct Monkey* monkey, int index) {
     return false; // Monkey not found at the specified index
 }
 
-// Function to get a single monkey from the list by its device id
+//-----------------------------------------------------------------------------------------------------------------------
+/*! getMonkeyByID
+* @brief Function to get a single monkey from the list by its device id
+* @param monkey Pointer to the Monkey structure to store the monkey data
+* @param id The device id of the monkey to retrieve
+* @return true if the monkey is found with the specified id, false otherwise
+*/
 bool getMonkeyByID(struct Monkey* monkey, int id)
 {
     k_mutex_lock(&monkey_mutex, K_FOREVER);
@@ -155,9 +190,13 @@ bool getMonkeyByID(struct Monkey* monkey, int id)
     k_mutex_unlock(&monkey_mutex);
 }
 
-
-// Function to get three monkeys from the list starting from a specific index
-// Returns true if monkeys are retrieved successfully, false otherwise
+//-----------------------------------------------------------------------------------------------------------------------
+/*! getThreeMonkeys
+* @brief Function to get three monkeys from the list starting from a specific index
+* @param monkeys Pointer to the array of Monkey structures to store the monkeys
+* @param startIndex The index of the first monkey to retrieve
+* @return true if the monkeys are retrieved successfully, false otherwise
+*/
 bool getThreeMonkeys(struct Monkey* monkeys, int startIndex) {
     k_mutex_lock(&monkey_mutex, K_FOREVER);
     struct Monkey* monkeyList = head_ref;
@@ -184,7 +223,11 @@ bool getThreeMonkeys(struct Monkey* monkeys, int startIndex) {
     return false; // Starting index not found or insufficient monkeys after the starting index
 }
 
-// Function to get the number of monkeys in the list
+//-----------------------------------------------------------------------------------------------------------------------
+/*! getNumMonkeys
+* @brief Function to get the number of monkeys in the list
+* @return The number of monkeys in the list
+*/
 int getNumMonkeys() {
     k_mutex_lock(&monkey_mutex, K_FOREVER);
     struct Monkey* monkeyList = head_ref;

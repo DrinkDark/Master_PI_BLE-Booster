@@ -45,8 +45,6 @@ struct snes_client_init_param snes_init_params = {
     .cb = snes_callbacks
 };
 
-//struct bt_gatt_dm snes_dm;
-
 static struct bt_gatt_dm_cb dm_callbacks = {
     .completed = ble_discovery_complete_cb,
     .service_not_found = ble_discovery_service_not_found_cb,
@@ -57,7 +55,10 @@ uint16_t monkey_handle;
 
 struct bt_uuid_128 monkey_src_UUID = BT_UUID_INIT_128(BT_UUID_SNES_VAL);
 
-//Function to initialize the ble thread
+//-----------------------------------------------------------------------------------------------------------------------
+/*! ble_thread_init
+* @brief Function to initialize the ble thread
+*/
 void ble_thread_init(){
     k_thread_create	(&bleThread,
                 BLE_STACK,										        
@@ -80,6 +81,10 @@ void ble_thread_init(){
     k_work_init(&work, ble_controller);
 }
 
+//-----------------------------------------------------------------------------------------------------------------------
+/*! ble_init
+* @brief Function to initialize the ble
+*/
 int ble_init(void){
     setConnectCallback(ble_connect);
     setDisconnectCallback(ble_disconnect);
@@ -113,7 +118,11 @@ int ble_init(void){
     return 0;
 }
 
-// Funtion to start the ble controller
+//-----------------------------------------------------------------------------------------------------------------------
+/*! ble_controller
+* @brief Function to control the ble
+* @param work The work struct
+*/
 void ble_controller(struct k_work *work){
     ble_init(); 
     ble_start_scan();
@@ -125,7 +134,11 @@ void ble_controller(struct k_work *work){
     }
 }
 
-// Function to start the ble scan
+//-----------------------------------------------------------------------------------------------------------------------
+/*! ble_start_scan
+* @brief Function to start the ble scan
+* @return 0 if the scan is started successfully, -1 otherwise
+*/
 int ble_start_scan(){
     int err;
 
@@ -143,7 +156,11 @@ int ble_start_scan(){
     return 0;
 }
 
-// Function to stop the ble scan
+//-----------------------------------------------------------------------------------------------------------------------
+/*! ble_stop_scan
+* @brief Function to stop the ble scan
+* @return 0 if the scan is stopped successfully, -1 otherwise
+*/
 int ble_stop_scan(){
     int err;
 
@@ -162,7 +179,14 @@ int ble_stop_scan(){
     return 0;
 }
 
-// Function called when a device is found. It will parse the advertising data to find the device name and the manufacturer data
+//-----------------------------------------------------------------------------------------------------------------------
+/*! ble_device_found_cb
+* @brief Function called when a device is found. It will parse the advertising data to find the device name and the manufacturer data
+* @param addr The address of the device
+* @param rssi The RSSI of the device
+* @param type The type of the device
+* @param ad The advertising data of the device
+*/
 void ble_device_found_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_t type, struct net_buf_simple *ad){
     char addr_str[BT_ADDR_LE_STR_LEN];
     char name[NAME_LEN];
@@ -196,7 +220,10 @@ void ble_device_found_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_t type, st
     free(data2);
 }
 
-// Function to remove a device from the list if it has not been seen for a certain time (BLE_SCAN_INTERVAL)
+//-----------------------------------------------------------------------------------------------------------------------
+/*! ble_remove_device
+* @brief Function to remove a device from the list if it has not been seen for a certain time (BLE_SCAN_INTERVAL)
+*/
 void ble_remove_device(){
     uint32_t currentTime = k_uptime_get_32();
 
@@ -216,14 +243,25 @@ void ble_remove_device(){
     }
 }
 
-// Function to parse the device name and extract the device number
+//-----------------------------------------------------------------------------------------------------------------------
+/*! ble_parse_device_name
+* @brief Function to parse the device name and extract the device number
+* @param name The name of the device
+* @return The device number
+*/
 int ble_parse_device_name(char* name) {
     int value = 0;
     sscanf(name, "%*[^0-9]%d", &value);
     return value;
 }
 
-// Function to parse the advertising data and extract the device name
+//-----------------------------------------------------------------------------------------------------------------------
+/*! ble_data_cb
+* @brief Function to parse the advertising data and extract the device name
+* @param data The data of the device
+* @param user_data The user data
+* @return false if the name is found, true otherwise (if true, the function will continue to parse the data)
+*/
 bool ble_data_cb(struct bt_data *data, void *user_data)
 {
 	char *name = user_data;
@@ -239,7 +277,13 @@ bool ble_data_cb(struct bt_data *data, void *user_data)
 	}
 }
 
-// Function to parse the advertising data and extract the device name
+//-----------------------------------------------------------------------------------------------------------------------
+/*! ble_manufacturer_data_cb
+* @brief Function to parse the advertising data and extract the manufacturer data
+* @param data The data of the device
+* @param user_data The user data
+* @return false if the manufacturer data is found, true otherwise (if true, the function will continue to parse the data)
+*/
 bool ble_manufacturer_data_cb(struct bt_data *data, void *user_data)
 {
 	char *name = user_data;
@@ -253,7 +297,11 @@ bool ble_manufacturer_data_cb(struct bt_data *data, void *user_data)
 	}
 }
 
-// Function to connect to a specific device
+//-----------------------------------------------------------------------------------------------------------------------
+/*! ble_connect
+* @brief Function to connect to a specific device
+* @param monkey The device to connect to
+*/
 void ble_connect(struct Monkey monkey){
     struct bt_conn* conn;
     int err = ble_stop_scan();
@@ -289,7 +337,12 @@ void ble_connect(struct Monkey monkey){
     #endif
 }
 
-// Function called when a device is connected
+//-----------------------------------------------------------------------------------------------------------------------
+/*! ble_connected_cb
+* @brief Function called when a device is connected
+* @param conn The connection
+* @param err The error code
+*/
 void ble_connected_cb(struct bt_conn *conn, uint8_t err)
 {
     char addr[BT_ADDR_LE_STR_LEN];
@@ -327,6 +380,12 @@ void ble_connected_cb(struct bt_conn *conn, uint8_t err)
     #endif
 }
 
+//-----------------------------------------------------------------------------------------------------------------------
+/*! ble_discovery_complete_cb
+* @brief Function called when the discovery is complete
+* @param dm The GATT DM
+* @param context The context
+*/
 void ble_discovery_complete_cb(struct bt_gatt_dm *dm, void *context){
     snes.conn = context;
     #ifdef DEBUG_MODE
@@ -344,6 +403,12 @@ void ble_discovery_complete_cb(struct bt_gatt_dm *dm, void *context){
     connected(connectedMonkey);
 }
 
+//-----------------------------------------------------------------------------------------------------------------------
+/*! ble_discovery_service_not_found_cb
+* @brief Function called when the service is not found
+* @param dm The GATT DM
+* @param context The context
+*/
 void ble_discovery_service_not_found_cb(struct bt_gatt_dm *dm, void *context){
     #ifdef DEBUG_MODE
         printk("Service not found\n");
@@ -352,12 +417,24 @@ void ble_discovery_service_not_found_cb(struct bt_gatt_dm *dm, void *context){
     ble_disconnect();
 }
 
-// Function to disconnect from a specific device
+//-----------------------------------------------------------------------------------------------------------------------
+/*! ble_param_updated_cb
+* @brief Function called when the parameters are updated
+* @param conn The connection
+* @param interval The interval
+* @param latency The latency
+* @param timeout The timeout
+*/
 void ble_disconnect(void){
     bt_conn_disconnect(snes.conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 }
 
-// Function called when a device is disconnected
+//-----------------------------------------------------------------------------------------------------------------------
+/*! ble_disconnected_cb
+* @brief Function called when a device is disconnected
+* @param conn The connection
+* @param reason The reason
+*/
 void ble_disconnected_cb(struct bt_conn *conn, uint8_t reason)
 {
 	if (conn != snes.conn) {
@@ -377,7 +454,10 @@ void ble_disconnected_cb(struct bt_conn *conn, uint8_t reason)
     ble_start_scan();
 }
 
-// Function to open the collar
+//-----------------------------------------------------------------------------------------------------------------------
+/*! ble_open_collar
+* @brief Function to open the collar
+*/
 void ble_open_collar(void) {
     uint8_t data[] = {BLE_MSG_HEADER, BLE_MSG_OPEN_COLLAR};
     snes_client_cmd_send(&snes, data, sizeof(data));
@@ -387,7 +467,10 @@ void ble_open_collar(void) {
     #endif
 }
 
-// Function to reset the collar
+//-----------------------------------------------------------------------------------------------------------------------
+/*! ble_reset_collar
+* @brief Function to reset the collar
+*/
 void ble_reset_collar(void){
     uint8_t data[] = {BLE_MSG_HEADER, BLE_MSG_RESET_DEVICE};
     snes_client_cmd_send(&snes, data, sizeof(data));
@@ -397,7 +480,10 @@ void ble_reset_collar(void){
     #endif
 }
 
-// Function to toggle the recording
+//-----------------------------------------------------------------------------------------------------------------------
+/*! ble_toggle_recording
+* @brief Function to toggle the recording
+*/
 void ble_toggle_recording(void){
     uint8_t data[] = {BLE_MSG_HEADER, BLE_MSG_TOGGLE_RECORDING};
     snes_client_cmd_send(&snes, data, sizeof(data));
@@ -407,14 +493,28 @@ void ble_toggle_recording(void){
     #endif
 }
 
-// Callback function for when the data has been written
+//-----------------------------------------------------------------------------------------------------------------------
+/*! ble_data_written_cb
+* @brief Function called when the data is written
+* @param snes The SNES client
+* @param err The error code
+* @param data The data
+* @param len The length of the data
+*/
 void ble_data_written_cb(struct snes_client *snes, uint8_t err, const uint8_t *data, uint16_t len) {
     #ifdef DEBUG_MODE
         printk("Data written\n");
     #endif
 }
 
-// Callback function for when the status is received
+//-----------------------------------------------------------------------------------------------------------------------
+/*! ble_status_received_cb
+* @brief Function called when the status is received
+* @param snes The SNES client
+* @param data The data
+* @param len The length of the data
+* @return 0
+*/
 uint8_t ble_status_received_cb(struct snes_client *snes, const uint8_t *data, uint16_t len) {
     connectedMonkey.state = data[0];
     updateInfos(connectedMonkey);
@@ -425,7 +525,14 @@ uint8_t ble_status_received_cb(struct snes_client *snes, const uint8_t *data, ui
     return 0;
 }
 
-// Callback function for when the DOR is received
+//-----------------------------------------------------------------------------------------------------------------------
+/*! ble_dor_received_cb
+* @brief Function called when the days of recording are received
+* @param snes The SNES client
+* @param data The data
+* @param len The length of the data
+* @return 0
+*/
 uint8_t ble_dor_received_cb(struct snes_client *snes, const uint8_t *data, uint16_t len) {
     connectedMonkey.record_time = data[0];
     updateInfos(connectedMonkey);
@@ -436,7 +543,14 @@ uint8_t ble_dor_received_cb(struct snes_client *snes, const uint8_t *data, uint1
     return 0;
 }
 
-// Callback function for when the device ID is received
+//-----------------------------------------------------------------------------------------------------------------------
+/*! ble_device_id_received_cb
+* @brief Function called when the device ID is received
+* @param snes The SNES client
+* @param data The data
+* @param len The length of the data
+* @return 0
+*/
 uint8_t ble_device_id_received_cb(struct snes_client *snes, const uint8_t *data, uint16_t len) {
     connectedMonkey.num = data[0];
     updateInfos(connectedMonkey);
@@ -447,7 +561,14 @@ uint8_t ble_device_id_received_cb(struct snes_client *snes, const uint8_t *data,
     return 0;
 }
 
-// Callback function for when the mic gain is received
+//-----------------------------------------------------------------------------------------------------------------------
+/*! ble_mic_gain_received_cb
+* @brief Function called when the microphone gain is received
+* @param snes The SNES client
+* @param data The data
+* @param len The length of the data
+* @return 0
+*/
 uint8_t ble_mic_gain_received_cb(struct snes_client *snes, const uint8_t *data, uint16_t len) {
     #ifdef DEBUG_MODE
         printk("Microphone gain received\n");
@@ -456,28 +577,44 @@ uint8_t ble_mic_gain_received_cb(struct snes_client *snes, const uint8_t *data, 
     return 0;
 }
 
-// Callback function for when the status is unsubscribed
+//-----------------------------------------------------------------------------------------------------------------------
+/*! ble_status_unsubscribed_cb
+* @brief Function called when the status is unsubscribed
+* @param snes The SNES client
+*/
 void ble_status_unsubscribed_cb(struct snes_client *snes) {
     #ifdef DEBUG_MODE
         printk("Status notification unsubscribed\n");
     #endif
 }
 
-// Callback function for when the DOR is unsubscribed
+//-----------------------------------------------------------------------------------------------------------------------
+/*! ble_dor_unsubscribed_cb
+* @brief Function called when the days of recording are unsubscribed
+* @param snes The SNES client
+*/
 void ble_dor_unsubscribed_cb(struct snes_client *snes) {
     #ifdef DEBUG_MODE
         printk("Days of recording notification unsubscribed\n");
     #endif
 }
 
-// Callback function for when the device ID is unsubscribed
+//-----------------------------------------------------------------------------------------------------------------------
+/*! ble_device_id_unsubscribed_cb
+* @brief Function called when the device ID is unsubscribed
+* @param snes The SNES client
+*/
 void ble_device_id_unsubscribed_cb(struct snes_client *snes) {
     #ifdef DEBUG_MODE
         printk("Device ID notification unsubscribed\n");
     #endif
 }
 
-// Callback function for when the mic gain is unsubscribed
+//-----------------------------------------------------------------------------------------------------------------------
+/*! ble_mic_gain_unsubscribed_cb
+* @brief Function called when the microphone gain is unsubscribed
+* @param snes The SNES client
+*/
 void ble_mic_gain_unsubscribed_cb(struct snes_client *snes) {
     #ifdef DEBUG_MODE
         printk("Microphone gain notification unsubscribed\n");
