@@ -10,8 +10,8 @@
 #include <stdlib.h>
 
 #include "ble.h"
-#include "../define.h"
-#include "connection.h"
+#include "../../define.h"
+#include "../connection.h"
 
 K_EVENT_DEFINE(event);
 

@@ -3,7 +3,7 @@
 
 #include <zephyr/types.h>
 #include <zephyr/bluetooth/addr.h>
-#include "monkeylist.h"
+#include "../monkeylist.h"
 #include "snes.h"
 #include "snes_client.h"
 
