@@ -12,11 +12,6 @@
 // You can also visit the nRF DeviceTree extension documentation at https://nrfconnect.github.io/vscode-nrf-connect/devicetree/nrfdevicetree.html
 
 
-/*&uart1 {
-	status = "okay";
-	current-speed = <115200>;
-};*/
-
 &uart1 {
 	status = "okay";
 	current-speed = <115200>;
@@ -49,10 +44,17 @@
 };
 
 &nrf_radio_fem {
-	ant-sel-gpios = <&gpio0 20 GPIO_ACTIVE_HIGH>;
-	tx-en-settle-time-us = <100>;
-	rx-en-settle-time-us = <100>;
-	pdn-settle-time-us = <100>;
-	trx-hold-time-us = <100>;
-};
+	compatible  = "nordic,nrf21540-fem";
+	spi-if = <&nrf_radio_fem_spi>;
+	
+	tx-en-settle-time-us = <1>;
+	rx-en-settle-time-us = <1>;
+	pdn-settle-time-us = <1>;
+	trx-hold-time-us = <1>;
 
+	tx-en-gpios = <&gpio0 22 GPIO_ACTIVE_HIGH>;
+	rx-en-gpios = <&gpio0 19 GPIO_ACTIVE_HIGH>;
+	pdn-gpios   = <&gpio0 23 GPIO_ACTIVE_HIGH>;
+	ant-sel-gpios = <&gpio0 20 GPIO_ACTIVE_HIGH>;
+	mode-gpios   = <&gpio0 17 GPIO_ACTIVE_HIGH>;
+};

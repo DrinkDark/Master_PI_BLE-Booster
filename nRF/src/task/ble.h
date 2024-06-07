@@ -28,6 +28,7 @@
 void ble_thread_init(void);
 
 int ble_init(void);
+void ble_fem_init(void);
 
 void ble_controller(struct k_work *work);
 int ble_start_scan(void);
