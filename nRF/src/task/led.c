@@ -1,4 +1,3 @@
-
 //includes
 #include <nrfx_clock.h>
 #include <zephyr/kernel.h>

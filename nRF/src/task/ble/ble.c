@@ -1,3 +1,6 @@
+//-----------------------------------------------------------------------------------------------------------------------
+// Include files
+//-----------------------------------------------------------------------------------------------------------------------
 #include <zephyr/kernel.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/hci.h>
@@ -13,7 +16,16 @@
 #include "../../define.h"
 #include "../connection.h"
 
-K_EVENT_DEFINE(event);
+
+//-----------------------------------------------------------------------------------------------------------------------
+// Variables
+//-----------------------------------------------------------------------------------------------------------------------
+
+// Define the stack and the thread for the BLE
+K_THREAD_STACK_DEFINE(BLE_STACK, BLE_STACK_SIZE);
+static struct k_thread bleThread;
+
+struct k_work work;
 
 // Define callbacks for the BLE connection
 BT_CONN_CB_DEFINE(conn_callbacks) = {
@@ -21,14 +33,9 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.disconnected = ble_disconnected_cb,
 };
 
-K_THREAD_STACK_DEFINE(BLE_STACK, BLE_STACK_SIZE);
-static struct k_thread bleThread;
-
-LOG_MODULE_REGISTER(ble, LOG_LEVEL_DBG);
-
-struct k_work work;
-
+// Define the SNES client, callbacks and params
 struct snes_client snes;
+
 const struct snes_client_cb snes_callbacks = {
     .cmd_sent = ble_data_written_cb,
     .status_received = ble_status_received_cb,
@@ -45,15 +52,21 @@ struct snes_client_init_param snes_init_params = {
     .cb = snes_callbacks
 };
 
+// Define the gatt discovery manager callbacks
 static struct bt_gatt_dm_cb dm_callbacks = {
     .completed = ble_discovery_complete_cb,
     .service_not_found = ble_discovery_service_not_found_cb,
 };
 
+// Define the connected monkey struct and the service UUID
 struct Monkey connectedMonkey;
-uint16_t monkey_handle;
 
 struct bt_uuid_128 monkey_src_UUID = BT_UUID_INIT_128(BT_UUID_SNES_VAL);
+
+
+//-----------------------------------------------------------------------------------------------------------------------
+// Function prototypes
+//-----------------------------------------------------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------------------------------------------------
 /*! ble_thread_init
@@ -73,10 +86,6 @@ void ble_thread_init(){
 
     k_thread_name_set(&bleThread, "bleThread");
     k_thread_start(&bleThread);
-
-    #ifdef DEBUG_MODE
-        printk("ble_thread_init\n");
-    #endif
 
     k_work_init(&work, ble_controller);
 }
