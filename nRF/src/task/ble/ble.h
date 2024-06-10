@@ -53,10 +53,6 @@ void ble_discovery_complete_cb(struct bt_gatt_dm *dm, void *context);
 void ble_discovery_service_not_found_cb(struct bt_gatt_dm *dm, void *context);
 
 void ble_param_updated_cb(struct bt_conn *conn, uint16_t interval, uint16_t latency, uint16_t timeout);
-
-bool ble_param_request_cb(struct bt_conn *conn, struct bt_le_conn_param *param);
-void ble_exchange_func(struct bt_conn *conn, uint8_t err, struct bt_gatt_exchange_params *params);
-
 int ble_parse_device_name(char* name);
 
 void ble_data_written_cb(struct snes_client *snes, uint8_t err, const uint8_t *data, uint16_t len);
