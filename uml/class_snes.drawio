@@ -1,0 +1,13 @@
+<mxfile host="app.diagrams.net" modified="2024-06-11T06:47:00.983Z" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36" etag="TiygNRjFrLinthTHptPy" version="24.5.2" type="device">
+  <diagram name="Page-1" id="O4pbYc8ClEfpNFPe7JOz">
+    <mxGraphModel dx="1199" dy="-645" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="YvavNj8v6y0ZmAY-Hc3h-163" value="&lt;p style=&quot;margin:0px;margin-top:4px;text-align:center;&quot;&gt;&lt;i&gt;snes&lt;/i&gt;&lt;/p&gt;&lt;hr size=&quot;1&quot;&gt;&lt;p style=&quot;margin: 0px 0px 0px 4px;&quot;&gt;&lt;/p&gt;&lt;span style=&quot;text-wrap: wrap;&quot;&gt;&amp;nbsp;+ bt_snes_init(callbacks: bt_snes_cb*): int&amp;nbsp;&lt;/span&gt;&lt;br style=&quot;text-wrap: wrap;&quot;&gt;&lt;span style=&quot;text-wrap: wrap;&quot;&gt;&amp;nbsp;+ bt_snes_cmd_send(conn: bt_conn*, data: uint8_t*, len: uint16): int&lt;/span&gt;&lt;div style=&quot;text-wrap: wrap;&quot;&gt;&amp;nbsp;+ bt_snes_update_status_cb(status: uint8_t): int&lt;br&gt;&amp;nbsp;+ bt_snes_update_days_of_records_cb(dor: uint8_t): int&lt;br&gt;&amp;nbsp;+ bt_snes_update_device_identifier_cb(device_id: uint8_t): int&lt;br&gt;&amp;nbsp;+ bt_snes_update_mic_input_gain_cb(input_gain: uint8_t): int&lt;br&gt;&amp;nbsp;+ bt_snes_get_mtu(conn: bt_conn*): uint32_t&lt;br&gt;&amp;nbsp;+ on_snes_connected(conn: bt_conn*): void&lt;br&gt;&lt;/div&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;&lt;span style=&quot;text-wrap: wrap; background-color: initial;&quot;&gt;+ on_snes_disconnected(): void&lt;/span&gt;&lt;span style=&quot;background-color: initial;&quot;&gt;&amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp;&lt;/span&gt;&lt;br&gt;&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;&lt;br&gt;&lt;/p&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;&lt;br&gt;&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;&lt;br&gt;&lt;/p&gt;" style="verticalAlign=top;align=left;overflow=fill;fontSize=12;fontFamily=Helvetica;html=1;rounded=0;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1" vertex="1" parent="1">
+          <mxGeometry x="240" y="1230" width="446" height="170" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
