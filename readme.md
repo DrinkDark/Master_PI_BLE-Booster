@@ -24,3 +24,6 @@ The program is split into two main tasks. The first is the interface management 
 The project is composed of two main folder :
 - **nRF** : it contain the code for the nRF21540-DB development kit.
 - **display** : it contain the code for the Nextion screen.
+
+The uml folder contains all the uml class and the sequence diagram.
+
