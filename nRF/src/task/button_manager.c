@@ -10,7 +10,6 @@
 #include "display_controller.h"
 
 
-
 #define SW0_NODE	DT_ALIAS(sw0)
 static const struct gpio_dt_spec button1 = GPIO_DT_SPEC_GET_OR(SW0_NODE, gpios,{0});
 static struct gpio_callback button1_cb_data;
