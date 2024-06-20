@@ -10,7 +10,6 @@
 #include "display_controller.h"
 
 
-
 #define SW0_NODE	DT_ALIAS(sw0)
 static const struct gpio_dt_spec button1 = GPIO_DT_SPEC_GET_OR(SW0_NODE, gpios,{0});
 static struct gpio_callback button1_cb_data;
@@ -29,11 +28,23 @@ static struct gpio_callback button4_cb_data;
 
 static K_WORK_DELAYABLE_DEFINE(debouncer_work, button_manager_debouncer);
 
+//-----------------------------------------------------------------------------------------------------------------------
+/*! button_manager_button_pressed
+* @brief Callback function for button press
+* @param dev Pointer to the device structure
+* @param cb Pointer to the gpio callback structure
+* @param pins Pin number
+*/
 void button_manager_button_pressed(const struct device *dev, struct gpio_callback *cb,uint32_t pins)
 {
 	k_work_reschedule(&debouncer_work, K_MSEC(15));	
 }
 
+//-----------------------------------------------------------------------------------------------------------------------
+/*! button_manager_debouncer
+* @brief Debounce function for buttons
+* @param work Pointer to the work structure
+*/
 void button_manager_debouncer(struct k_work *work)
 {
     ARG_UNUSED(work);
@@ -64,8 +75,10 @@ void button_manager_debouncer(struct k_work *work)
 	}
 }
 
-
-
+//-----------------------------------------------------------------------------------------------------------------------
+/*! button_manager_init
+* @brief Initialize button manager
+*/
 void button_manager_init( void )
 {
 	gpio_pin_configure_dt(&button1, GPIO_INPUT);								

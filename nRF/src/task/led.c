@@ -1,4 +1,3 @@
-
 //includes
 #include <nrfx_clock.h>
 #include <zephyr/kernel.h>
@@ -25,6 +24,10 @@ static const struct gpio_dt_spec led2 = GPIO_DT_SPEC_GET(LED1_NODE, gpios);
 static const struct gpio_dt_spec led3 = GPIO_DT_SPEC_GET(LED2_NODE, gpios);
 static const struct gpio_dt_spec led4 = GPIO_DT_SPEC_GET(LED3_NODE, gpios);
 
+//-----------------------------------------------------------------------------------------------------------------------
+/*! led_controller
+* @brief Function to control the LEDs
+*/
 void led_controller(void)
 {	
 	#ifdef DEBUG_MODE
@@ -56,6 +59,10 @@ void led_controller(void)
 	}	
 }
 
+//-----------------------------------------------------------------------------------------------------------------------
+/*! led_thread_init
+* @brief Function to initialize the LED thread
+*/
 void led_thread_init( void )
 {
 	k_thread_create	(&ledThread,

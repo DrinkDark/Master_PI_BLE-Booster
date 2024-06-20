@@ -16,12 +16,20 @@ bool device_3_reset = false;
 //mutex to protect print
 static struct k_mutex display_mutex;
 
+//-----------------------------------------------------------------------------------------------------------------------
+/*! display_init
+* @brief Initialize the display mutex
+*/
 void display_init()
 {
         k_mutex_init(&display_mutex);
 }
 
-
+//-----------------------------------------------------------------------------------------------------------------------
+/*! nextion_command
+* @brief Send a command to the Nextion display
+* @param buf The command to send
+*/
 void nextion_command(char *buf)
 {
 	int msg_len = strlen(buf);
@@ -34,6 +42,10 @@ void nextion_command(char *buf)
         uart_poll_out(uart_dev,0xFF);
 }
 
+//-----------------------------------------------------------------------------------------------------------------------
+/*! display_main_page
+* @brief Display the main page on the Nextion display
+*/
 void display_main_page()
 {
         k_mutex_lock(&display_mutex, K_FOREVER);
@@ -50,6 +62,15 @@ void display_main_page()
         hide_device_3();
 }
 
+//-----------------------------------------------------------------------------------------------------------------------
+/*! display_device_1
+* @brief Display the first device on the Nextion display
+* @param deviceNbr The device number
+* @param rssi The RSSI value
+* @param nbrDays The number of days since last seen
+* @param state The state of the device
+* @param selected If the device is selected
+*/
 void display_device_1(int deviceNbr, int rssi, int nbrDays, enum main_state state, bool selected)
 {
         k_mutex_lock(&display_mutex, K_FOREVER);
@@ -142,6 +163,15 @@ void display_device_1(int deviceNbr, int rssi, int nbrDays, enum main_state stat
         k_mutex_unlock(&display_mutex);
 }
 
+//-----------------------------------------------------------------------------------------------------------------------
+/*! display_device_2
+* @brief Display the second device on the Nextion display
+* @param deviceNbr The device number
+* @param rssi The RSSI value
+* @param nbrDays The number of days since last seen
+* @param state The state of the device
+* @param selected If the device is selected
+*/
 void display_device_2(int deviceNbr, int rssi, int nbrDays, enum main_state state, bool selected)
 {
         k_mutex_lock(&display_mutex, K_FOREVER);
@@ -234,6 +264,15 @@ void display_device_2(int deviceNbr, int rssi, int nbrDays, enum main_state stat
         k_mutex_unlock(&display_mutex);
 }
 
+//-----------------------------------------------------------------------------------------------------------------------
+/*! display_device_3
+* @brief Display the third device on the Nextion display
+* @param deviceNbr The device number
+* @param rssi The RSSI value
+* @param nbrDays The number of days since last seen
+* @param state The state of the device
+* @param selected If the device is selected
+*/
 void display_device_3(int deviceNbr, int rssi, int nbrDays, enum main_state state, bool selected)
 {
         k_mutex_lock(&display_mutex, K_FOREVER);
@@ -325,6 +364,10 @@ void display_device_3(int deviceNbr, int rssi, int nbrDays, enum main_state stat
         k_mutex_unlock(&display_mutex);
 }
 
+//-----------------------------------------------------------------------------------------------------------------------
+/*! display_more_devices
+* @brief Display the "more" button on the Nextion display
+*/
 void display_more_devices()
 {
         k_mutex_lock(&display_mutex, K_FOREVER);
@@ -332,7 +375,10 @@ void display_more_devices()
         k_mutex_unlock(&display_mutex);
 }
 
-
+//-----------------------------------------------------------------------------------------------------------------------
+/*! hide_device_1
+* @brief Hide the first device on the Nextion display
+*/
 void hide_device_1()
 {
         k_mutex_lock(&display_mutex, K_FOREVER);
@@ -350,6 +396,10 @@ void hide_device_1()
         k_mutex_unlock(&display_mutex);
 }
 
+//-----------------------------------------------------------------------------------------------------------------------
+/*! hide_device_2
+* @brief Hide the second device on the Nextion display
+*/
 void hide_device_2()
 {
         k_mutex_lock(&display_mutex, K_FOREVER);
@@ -367,6 +417,10 @@ void hide_device_2()
         k_mutex_unlock(&display_mutex);
 }
 
+//-----------------------------------------------------------------------------------------------------------------------
+/*! hide_device_3
+* @brief Hide the third device on the Nextion display
+*/
 void hide_device_3()
 {
         k_mutex_lock(&display_mutex, K_FOREVER);
@@ -384,6 +438,10 @@ void hide_device_3()
         k_mutex_unlock(&display_mutex);
 }
 
+//-----------------------------------------------------------------------------------------------------------------------
+/*! reset_main_page
+* @brief Reset the main page
+*/
 void reset_main_page()
 {
         device_1_reset = true;
@@ -391,6 +449,10 @@ void reset_main_page()
         device_3_reset = true;  
 }
 
+//-----------------------------------------------------------------------------------------------------------------------
+/*! hide_more_devices
+* @brief Hide the "more" button on the Nextion display
+*/
 void hide_more_devices()
 {
         k_mutex_lock(&display_mutex, K_FOREVER);
@@ -400,6 +462,11 @@ void hide_more_devices()
         k_mutex_unlock(&display_mutex);
 }
 
+//-----------------------------------------------------------------------------------------------------------------------
+/*! display_loading_page
+* @brief Display the loading page on the Nextion display
+* @param deviceNbr The device number
+*/
 void display_loading_page(int deviceNbr)
 {
         k_mutex_lock(&display_mutex, K_FOREVER);
@@ -414,6 +481,14 @@ void display_loading_page(int deviceNbr)
         k_mutex_unlock(&display_mutex);
 }
 
+//-----------------------------------------------------------------------------------------------------------------------
+/*! display_device_page
+* @brief Display the device page on the Nextion display
+* @param deviceNbr The device number
+* @param rssi The RSSI value
+* @param nbrDays The number of days since last seen
+* @param state The state of the device
+*/
 void display_device_page(int deviceNbr, int rssi, int nbrDays, enum main_state state)
 {
         k_mutex_lock(&display_mutex, K_FOREVER);
@@ -451,7 +526,10 @@ void display_device_page(int deviceNbr, int rssi, int nbrDays, enum main_state s
         k_mutex_unlock(&display_mutex);
 }
 
-
+//-----------------------------------------------------------------------------------------------------------------------
+/*! display_select_open
+* @brief Select the open button on the Nextion display
+*/
 void display_select_open()
 {       
         k_mutex_lock(&display_mutex, K_FOREVER);
@@ -463,6 +541,11 @@ void display_select_open()
 
         k_mutex_unlock(&display_mutex);
 }
+
+//-----------------------------------------------------------------------------------------------------------------------
+/*! display_select_reset
+* @brief Select the reset button on the Nextion display
+*/
 void display_select_reset()
 {
         k_mutex_lock(&display_mutex, K_FOREVER);
@@ -474,6 +557,11 @@ void display_select_reset()
 
         k_mutex_unlock(&display_mutex);
 }
+
+//-----------------------------------------------------------------------------------------------------------------------
+/*! display_select_toggle
+* @brief Select the toggle button on the Nextion display
+*/
 void display_select_toggle()
 {
         k_mutex_lock(&display_mutex, K_FOREVER);
@@ -485,6 +573,11 @@ void display_select_toggle()
 
         k_mutex_unlock(&display_mutex);
 }
+
+//-----------------------------------------------------------------------------------------------------------------------
+/*! display_select_exit
+* @brief Select the exit button on the Nextion display
+*/
 void display_select_exit()
 {
         k_mutex_lock(&display_mutex, K_FOREVER);
@@ -496,6 +589,11 @@ void display_select_exit()
 
         k_mutex_unlock(&display_mutex);
 }
+
+//-----------------------------------------------------------------------------------------------------------------------
+/*! display_show_popup
+* @brief Show the popup on the Nextion display
+*/
 void display_show_popup()
 {
         k_mutex_lock(&display_mutex, K_FOREVER);
@@ -507,6 +605,10 @@ void display_show_popup()
         k_mutex_unlock(&display_mutex);
 }
 
+//-----------------------------------------------------------------------------------------------------------------------
+/*! display_show_popup_highlighted
+* @brief Show the highlighted popup on the Nextion display
+*/
 void display_show_popup_highlighted()
 {
         k_mutex_lock(&display_mutex, K_FOREVER);
@@ -518,6 +620,10 @@ void display_show_popup_highlighted()
         k_mutex_unlock(&display_mutex);
 }
 
+//-----------------------------------------------------------------------------------------------------------------------
+/*! display_hide_popup
+* @brief Hide the popup on the Nextion display
+*/
 void display_hide_popup()
 {
         k_mutex_lock(&display_mutex, K_FOREVER);

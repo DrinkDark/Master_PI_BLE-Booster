@@ -9,7 +9,7 @@
 #include "define.h"
 #include "task/led.h"
 #include "task/button_manager.h"
-#include "task/ble.h"
+#include "task/ble/ble.h"
 #include "task/monkeylist.h"
 
 K_HEAP_DEFINE(monkeyListHeap,32768);
